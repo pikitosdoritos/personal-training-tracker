@@ -17,6 +17,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <title>TrackFit | Coach Management</title>
         <meta name="description" content="Advanced training tracker for coaches and clients" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link rel="icon" href="/favicon.png" type="image/png" />
       </head>
       <body>
         {isLoginPage ? (
