@@ -19,8 +19,12 @@ def get_google_sso():
     if not settings.GOOGLE_CLIENT_ID or not settings.GOOGLE_CLIENT_SECRET:
         raise HTTPException(status_code=503, detail="Google OAuth not configured. Add GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET to backend/.env")
     if _google_sso is None:
-        from fastapi_sso.sso.google import GoogleSSO
-        _google_sso = GoogleSSO(
+        try:
+            from fastapi_sso.sso.google import GoogleSSO as GSSO
+        except ImportError:
+            from fastapi_sso.sso.google import Googlesso as GSSO # Fallback if needed
+            
+        _google_sso = GSSO(
             client_id=settings.GOOGLE_CLIENT_ID,
             client_secret=settings.GOOGLE_CLIENT_SECRET,
             scope=["openid", "email", "profile"],
@@ -33,8 +37,12 @@ def get_github_sso():
     if not settings.GITHUB_CLIENT_ID or not settings.GITHUB_CLIENT_SECRET:
         raise HTTPException(status_code=503, detail="GitHub OAuth not configured. Add GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET to backend/.env")
     if _github_sso is None:
-        from fastapi_sso.sso.github import GitHubSSO
-        _github_sso = GitHubSSO(
+        try:
+            from fastapi_sso.sso.github import GithubSSO as GSSO
+        except ImportError:
+            from fastapi_sso.sso.github import GitHubSSO as GSSO
+            
+        _github_sso = GSSO(
             client_id=settings.GITHUB_CLIENT_ID,
             client_secret=settings.GITHUB_CLIENT_SECRET,
             redirect_uri="http://localhost:8000/api/auth/github/callback"
