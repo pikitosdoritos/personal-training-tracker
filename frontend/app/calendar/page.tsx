@@ -100,7 +100,7 @@ export default function CalendarPage() {
       </header>
 
       <GlassCard style={{ padding: '0', overflow: 'hidden' }}>
-        <div className="calendar-grid-wrapper">
+        <div className="calendar-grid-wrapper" style={{ display: 'grid', gridTemplateColumns: '80px repeat(7, 1fr)' }}>
           <div style={{ padding: '16px', borderRight: '1px solid var(--card-border)' }} />
           {weekDates.map((d, i) => {
             const isToday = toDateStr(d) === toDateStr(new Date());

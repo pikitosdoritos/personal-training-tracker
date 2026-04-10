@@ -17,7 +17,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <title>TrackFit | Coach Management</title>
         <meta name="description" content="Advanced training tracker for coaches and clients" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link rel="icon" href="/favicon.png" type="image/png" />
+        <link rel="icon" href="/favicon.ico" type="image/x-icon" />
       </head>
       <body>
         {isLoginPage ? (
@@ -29,7 +29,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               position: 'fixed', top: 0, left: 0, right: 0, height: '60px',
               background: 'rgba(10,10,12,0.95)', backdropFilter: 'blur(12px)',
               borderBottom: '1px solid var(--card-border)',
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              alignItems: 'center', justifyContent: 'space-between',
               padding: '0 16px', zIndex: 98
             }}>
               <button
@@ -40,8 +40,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <Menu size={22} />
               </button>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <div style={{ width: '28px', height: '28px', background: 'var(--primary)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Dumbbell size={16} color="white" />
+                <div style={{ width: '28px', height: '28px', borderRadius: '8px', overflow: 'hidden' }}>
+                  <img src="/logo.png" alt="TrackFit Logo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 </div>
                 <span style={{ fontWeight: 700, fontSize: '1rem' }}>TrackFit</span>
               </div>
