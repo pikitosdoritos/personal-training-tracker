@@ -96,10 +96,12 @@ async def github_callback(request: Request, db: Session = Depends(get_db)):
 async def handle_social_login(email: str, name: str, db: Session):
     db_user = db.query(User).filter(User.email == email).first()
     if not db_user:
+        temp_pwd = str(uuid.uuid4())
+        print(f"DEBUG: Creating new social user. Email: {email}, Pwd length: {len(temp_pwd)}")
         db_user = User(
             email=email,
             full_name=name,
-            hashed_password=security.get_password_hash(str(uuid.uuid4())),
+            hashed_password=security.get_password_hash(temp_pwd),
             role=UserRole.CLIENT
         )
         db.add(db_user)
