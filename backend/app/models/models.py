@@ -16,7 +16,12 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String, unique=True, index=True, nullable=False)
     hashed_password = Column(String, nullable=False)
-    full_name = Column(String)
+    full_name = Column(String)  # Keeping for backwards compatibility
+    first_name = Column(String)
+    last_name = Column(String)
+    age = Column(Integer)
+    phone_number = Column(String)
+    telegram_username = Column(String)
     role = Column(String, default=UserRole.CLIENT)
     contact_info = Column(String)
     
@@ -34,6 +39,10 @@ class Pricing(Base):
 
     user = relationship("User", back_populates="pricing")
 
+class TrainingStatus(str, enum.Enum):
+    PLANNED = "planned"
+    COMPLETED = "completed"
+
 class TrainingSession(Base):
     __tablename__ = "training_sessions"
 
@@ -44,6 +53,7 @@ class TrainingSession(Base):
     start_time = Column(Time, nullable=False)
     end_time = Column(Time, nullable=False)
     capacity = Column(Integer, default=1)
+    status = Column(String, default=TrainingStatus.PLANNED)
     
     coach = relationship("User", back_populates="sessions")
     bookings = relationship("Booking", back_populates="training_session")

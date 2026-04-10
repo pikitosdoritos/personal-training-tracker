@@ -1,12 +1,17 @@
 from pydantic import BaseModel, EmailStr
 from typing import Optional, List
 from datetime import date, time, datetime
-from ..models.models import UserRole, BookingStatus, PaymentStatus
+from ..models.models import UserRole, BookingStatus, PaymentStatus, TrainingStatus
 
 # User Schemas
 class UserBase(BaseModel):
     email: EmailStr
     full_name: Optional[str] = None
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    age: Optional[int] = None
+    phone_number: Optional[str] = None
+    telegram_username: Optional[str] = None
     role: UserRole = UserRole.CLIENT
     contact_info: Optional[str] = None
 
@@ -43,6 +48,7 @@ class TrainingSessionBase(BaseModel):
     start_time: time
     end_time: time
     capacity: int = 1
+    status: TrainingStatus = TrainingStatus.PLANNED
 
 class TrainingSessionCreate(TrainingSessionBase):
     pass
