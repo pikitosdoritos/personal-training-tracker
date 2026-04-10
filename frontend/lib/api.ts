@@ -37,7 +37,7 @@ export const authApi = {
     api.post('/api/auth/login', new URLSearchParams(data as any), {
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     }),
-  register: (data: { email: string; password: string; full_name: string; role: string; contact_info?: string }) =>
+  register: (data: { email: string; password: string; first_name?: string; last_name?: string; age?: number; phone_number?: string; telegram_username?: string; role: string }) =>
     api.post('/api/auth/register', data),
 };
 

@@ -22,9 +22,12 @@ def register(user_in: UserCreate, db: Session = Depends(get_db)):
     db_user = User(
         email=user_in.email,
         hashed_password=hashed_password,
-        full_name=user_in.full_name,
-        role=user_in.role,
-        contact_info=user_in.contact_info
+        first_name=user_in.first_name,
+        last_name=user_in.last_name,
+        age=user_in.age,
+        phone_number=user_in.phone_number,
+        telegram_username=user_in.telegram_username,
+        role=user_in.role
     )
     db.add(db_user)
     db.commit()
