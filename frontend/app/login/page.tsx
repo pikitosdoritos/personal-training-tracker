@@ -144,11 +144,13 @@ function LoginForm() {
                </div>
                <div style={{ marginBottom: '32px' }}>
                   <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.9rem', color: 'rgba(255,255,255,0.7)' }}>I am a...</label>
-                  <select value={role} onChange={(e) => setRole(e.target.value)}
-                    style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', borderRadius: '12px', padding: '12px', color: 'white', outline: 'none', appearance: 'none' }}>
-                    <option style={{ color: 'black' }} value="client">Client</option>
-                    <option style={{ color: 'black' }} value="coach">Trainer (Coach)</option>
-                  </select>
+                  <div className="custom-select-wrapper">
+                      <select value={role} onChange={(e) => setRole(e.target.value)}
+                        style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', borderRadius: '12px', padding: '12px', color: 'white', outline: 'none', appearance: 'none', cursor: 'pointer' }}>
+                        <option style={{ color: 'black' }} value="client">Client</option>
+                        <option style={{ color: 'black' }} value="coach">Trainer (Coach)</option>
+                      </select>
+                  </div>
                </div>
              </>
           )}

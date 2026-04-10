@@ -27,15 +27,16 @@ def update_me(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    if user_update.email and user_update.email != current_user.email:
+    if user_update.email is not None and user_update.email != current_user.email:
         existing = db.query(User).filter(User.email == user_update.email).first()
         if existing:
             raise HTTPException(status_code=400, detail="Email already in use")
         current_user.email = user_update.email
-    if user_update.full_name is not None:
-        current_user.full_name = user_update.full_name
-    if user_update.contact_info is not None:
-        current_user.contact_info = user_update.contact_info
+        
+    for field in ["full_name", "first_name", "last_name", "age", "phone_number", "telegram_username", "photo_url", "contact_info"]:
+        if getattr(user_update, field) is not None:
+            setattr(current_user, field, getattr(user_update, field))
+            
     db.commit()
     db.refresh(current_user)
     return current_user

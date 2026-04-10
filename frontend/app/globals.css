@@ -65,6 +65,26 @@
     background: #f1f5f9 !important;
 }
 
+/* ── Custom Select Dropdown ── */
+.custom-select-wrapper {
+  position: relative;
+  width: 100%;
+}
+.custom-select-wrapper::after {
+  content: "";
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 6px solid rgba(255, 255, 255, 0.5);
+  pointer-events: none;
+}
+[data-theme='light'] .custom-select-wrapper::after {
+  border-top-color: rgba(0, 0, 0, 0.4) !important;
+}
+
 *, *::before, *::after {
   box-sizing: border-box;
   padding: 0;
@@ -302,7 +322,7 @@ a {
 /* ── Animations ── */
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(16px); }
-  to   { opacity: 1; transform: translateY(0); }
+  to   { opacity: 1; transform: none; }
 }
 
 .animate-fade-in {

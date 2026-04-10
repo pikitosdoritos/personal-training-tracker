@@ -207,21 +207,23 @@ export default function CalendarPage() {
               
               <div>
                 <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Training Type (Costs & Stats)</label>
-                <select value={form.training_type_id || ''} onChange={(e) => {
-                    const tid = e.target.value;
-                    const selected = trainingTypes.find(t => t.id === parseInt(tid));
-                    setForm({ 
-                        ...form, 
-                        training_type_id: tid, 
-                        title: selected ? selected.name : form.title 
-                    });
-                  }}
-                  style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', borderRadius: '10px', padding: '10px 14px', color: 'white', outline: 'none', appearance: 'none' }}>
-                  <option style={{ color: 'black' }} value="">Optional: Custom Training</option>
-                  {trainingTypes.map(t => (
-                    <option style={{ color: 'black' }} key={t.id} value={t.id}>{t.name} ({t.duration_minutes}m, {t.cost} UAH)</option>
-                  ))}
-                </select>
+                <div className="custom-select-wrapper">
+                    <select value={form.training_type_id || ''} onChange={(e) => {
+                        const tid = e.target.value;
+                        const selected = trainingTypes.find(t => t.id === parseInt(tid));
+                        setForm({ 
+                            ...form, 
+                            training_type_id: tid, 
+                            title: selected ? selected.name : form.title 
+                        });
+                      }}
+                      style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', borderRadius: '10px', padding: '10px 14px', color: 'white', outline: 'none', appearance: 'none', cursor: 'pointer' }}>
+                      <option style={{ color: 'black' }} value="">Optional: Custom Training</option>
+                      {trainingTypes.map(t => (
+                        <option style={{ color: 'black' }} key={t.id} value={t.id}>{t.name} ({t.duration_minutes}m, {t.cost} UAH)</option>
+                      ))}
+                    </select>
+                </div>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
@@ -239,15 +241,17 @@ export default function CalendarPage() {
 
               <div>
                 <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Invite Client</label>
-                <select value={form.client_id || ''} onChange={(e) => setForm({ ...form, client_id: e.target.value })}
-                  style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', borderRadius: '10px', padding: '10px 14px', color: 'white', outline: 'none', appearance: 'none' }}>
-                  <option style={{ color: 'black' }} value="">Optional: Select a client</option>
-                  {clients.map(c => (
-                    <option style={{ color: 'black' }} key={c.id} value={c.id}>
-                      {[c.first_name, c.last_name].filter(Boolean).join(' ') || c.email}
-                    </option>
-                  ))}
-                </select>
+                <div className="custom-select-wrapper">
+                    <select value={form.client_id || ''} onChange={(e) => setForm({ ...form, client_id: e.target.value })}
+                      style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', borderRadius: '10px', padding: '10px 14px', color: 'white', outline: 'none', appearance: 'none', cursor: 'pointer' }}>
+                      <option style={{ color: 'black' }} value="">Optional: Select a client</option>
+                      {clients.map(c => (
+                        <option style={{ color: 'black' }} key={c.id} value={c.id}>
+                          {[c.first_name, c.last_name].filter(Boolean).join(' ') || c.email}
+                        </option>
+                      ))}
+                    </select>
+                </div>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>

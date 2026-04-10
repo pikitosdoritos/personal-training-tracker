@@ -23,6 +23,12 @@ class UserUpdate(BaseModel):
     email: Optional[EmailStr] = None
     full_name: Optional[str] = None
     contact_info: Optional[str] = None
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    age: Optional[int] = None
+    phone_number: Optional[str] = None
+    telegram_username: Optional[str] = None
+    photo_url: Optional[str] = None
 
 class UserOut(UserBase):
     id: int
