@@ -143,8 +143,8 @@ export default function ClientsPage() {
 
       {/* Add Client Modal */}
       {showModal && (
-        <div style={{ position: 'fixed', inset: 0, padding: '20px', background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', overflowY: 'auto', zIndex: 1000 }}>
-          <GlassCard style={{ width: '100%', maxWidth: '480px', marginTop: '10vh', marginBottom: '10vh' }}>
+        <div style={{ position: 'fixed', inset: 0, padding: '16px', background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <GlassCard style={{ width: '100%', maxWidth: '480px', maxHeight: '90vh', overflowY: 'auto' }}>
             <h3 style={{ fontWeight: 700, fontSize: '1.25rem', marginBottom: '24px' }}>Add New Client</h3>
             {formError && (
               <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#ef4444', padding: '10px', borderRadius: '8px', marginBottom: '16px', fontSize: '0.9rem' }}>

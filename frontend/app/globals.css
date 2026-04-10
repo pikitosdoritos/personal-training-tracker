@@ -14,6 +14,57 @@
   --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+[data-theme='light'] {
+  --background: #f8fafc;
+  --foreground: #0f172a;
+  --card-bg: #ffffff;
+  --card-border: rgba(0, 0, 0, 0.1);
+  --glass-bg: rgba(255, 255, 255, 0.8);
+}
+
+[data-theme='light'] body {
+  background: var(--background);
+  color: var(--foreground);
+}
+
+[data-theme='light'] .glass-card, 
+[data-theme='light'] .glass, 
+[data-theme='light'] .sidebar {
+  background: var(--card-bg);
+  border-color: var(--card-border);
+}
+
+[data-theme='light'] input, 
+[data-theme='light'] select, 
+[data-theme='light'] textarea,
+[data-theme='light'] .form-input {
+  color: #0f172a !important;
+  background: #ffffff !important;
+  border-color: rgba(0,0,0,0.2) !important;
+}
+
+[data-theme='light'] p, 
+[data-theme='light'] span, 
+[data-theme='light'] label,
+[data-theme='light'] h1, 
+[data-theme='light'] h2, 
+[data-theme='light'] h3, 
+[data-theme='light'] h4 {
+  color: var(--foreground) !important;
+}
+
+[data-theme='light'] .btn,
+[data-theme='light'] .btn span,
+[data-theme='light'] .btn-primary,
+[data-theme='light'] .btn-primary p {
+  color: #ffffff !important;
+}
+
+[data-theme='light'] .btn-secondary {
+    color: #0f172a !important;
+    background: #f1f5f9 !important;
+}
+
 *, *::before, *::after {
   box-sizing: border-box;
   padding: 0;

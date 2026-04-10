@@ -18,6 +18,19 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="description" content="Advanced training tracker for coaches and clients" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" type="image/x-icon" />
+        <script dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  var saved = localStorage.getItem('trackfit_theme');
+                  if (saved === 'light') { document.documentElement.setAttribute('data-theme', 'light'); }
+                  else if (saved !== 'dark' && window.matchMedia('(prefers-color-scheme: light)').matches) {
+                    document.documentElement.setAttribute('data-theme', 'light');
+                  }
+                } catch (e) {}
+              })();
+            `
+        }} />
       </head>
       <body>
         {isLoginPage ? (

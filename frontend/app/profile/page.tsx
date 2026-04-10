@@ -7,13 +7,24 @@ import { User, Mail, Phone, Save, CheckCircle } from 'lucide-react';
 
 export default function ProfilePage() {
   const [profile, setProfile] = useState<any>(null);
-  const [form, setForm] = useState({ first_name: '', last_name: '', email: '', phone_number: '', telegram_username: '', photo_url: '' });
+  const [form, setForm] = useState({ first_name: '', last_name: '', email: '', phone_number: '', telegram_username: '', photo_url: '', contact_info: '' });
   const [types, setTypes] = useState<any[]>([]);
   const [newType, setNewType] = useState({ name: 'Individual', duration_minutes: 60, cost: 500 });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState('');
+
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setForm(prev => ({ ...prev, photo_url: reader.result as string }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const fetchProfileAndTypes = async () => {
     try {
@@ -25,7 +36,8 @@ export default function ProfilePage() {
         email: res.data.email || '',
         phone_number: res.data.phone_number || '',
         telegram_username: res.data.telegram_username || '',
-        photo_url: res.data.photo_url || ''
+        photo_url: res.data.photo_url || '',
+        contact_info: res.data.contact_info || '',
       });
       
       // Fetch training types
@@ -171,10 +183,18 @@ export default function ProfilePage() {
               </div>
               
               <div>
-                <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Photo URL</label>
-                <input type="text" placeholder="https://..." value={form.photo_url} onChange={(e) => setForm({ ...form, photo_url: e.target.value })}
+                <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Profile Photo</label>
+                <input type="file" accept="image/*" onChange={handlePhotoUpload}
                   style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', borderRadius: '10px', padding: '10px 14px', color: 'white', outline: 'none' }} />
               </div>
+
+              {profile?.role === 'coach' && (
+                <div>
+                  <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Working Hours / Schedule</label>
+                  <textarea placeholder="e.g. Mon-Fri 09:00 - 18:00" value={form.contact_info} onChange={(e) => setForm({ ...form, contact_info: e.target.value })}
+                    style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', borderRadius: '10px', padding: '10px 14px', color: 'white', outline: 'none', resize: 'vertical', minHeight: '80px' }} />
+                </div>
+              )}
 
               <button type="submit" className="btn btn-primary" style={{ alignSelf: 'flex-start' }} disabled={saving}>
                 <Save size={18} />

@@ -4,7 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  LayoutDashboard, Calendar, Users, WalletCards, Settings, LogOut, Dumbbell, X
+  LayoutDashboard, Calendar, Users, WalletCards, Settings, LogOut, Moon, Sun, Monitor
 } from 'lucide-react';
 
 const menuItems = [
@@ -22,6 +22,28 @@ interface SidebarProps {
 
 export const Sidebar: React.FC<SidebarProps> = ({ open = true, onClose }) => {
   const pathname = usePathname();
+
+  const [activeTheme, setActiveTheme] = React.useState('system');
+
+  React.useEffect(() => {
+     setActiveTheme(localStorage.getItem('trackfit_theme') || 'system');
+  }, []);
+
+  const handleThemeChange = (t: string) => {
+     setActiveTheme(t);
+     if (t === 'system') {
+        localStorage.removeItem('trackfit_theme');
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
+            document.documentElement.setAttribute('data-theme', 'light');
+        } else {
+            document.documentElement.removeAttribute('data-theme');
+        }
+     } else {
+        localStorage.setItem('trackfit_theme', t);
+        if (t === 'light') document.documentElement.setAttribute('data-theme', 'light');
+        else document.documentElement.removeAttribute('data-theme');
+     }
+  };
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -79,6 +101,19 @@ export const Sidebar: React.FC<SidebarProps> = ({ open = true, onClose }) => {
             );
           })}
         </nav>
+
+        {/* Theme Toggler */}
+        <div style={{ marginBottom: '16px', background: 'rgba(0,0,0,0.1)', padding: '4px', borderRadius: '12px', display: 'flex', border: '1px solid var(--card-border)' }}>
+            <button onClick={() => handleThemeChange('light')} style={{ flex: 1, padding: '8px', border: 'none', background: activeTheme === 'light' ? 'var(--primary)' : 'transparent', color: activeTheme === 'light' ? 'white' : 'inherit', borderRadius: '8px', cursor: 'pointer', display: 'flex', justifyContent: 'center', transition: 'var(--transition)' }}>
+                <Sun size={16} />
+            </button>
+            <button onClick={() => handleThemeChange('system')} style={{ flex: 1, padding: '8px', border: 'none', background: activeTheme === 'system' ? 'var(--primary)' : 'transparent', color: activeTheme === 'system' ? 'white' : 'inherit', borderRadius: '8px', cursor: 'pointer', display: 'flex', justifyContent: 'center', transition: 'var(--transition)' }}>
+                <Monitor size={16} />
+            </button>
+            <button onClick={() => handleThemeChange('dark')} style={{ flex: 1, padding: '8px', border: 'none', background: activeTheme === 'dark' ? 'var(--primary)' : 'transparent', color: activeTheme === 'dark' ? 'white' : 'inherit', borderRadius: '8px', cursor: 'pointer', display: 'flex', justifyContent: 'center', transition: 'var(--transition)' }}>
+                <Moon size={16} />
+            </button>
+        </div>
 
         {/* Logout */}
         <button
