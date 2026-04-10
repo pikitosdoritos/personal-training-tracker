@@ -14,7 +14,7 @@ def create_training(
     db: Session = Depends(get_db),
     coach: User = Depends(get_current_coach)
 ):
-    # Double booking prevention check (simplified: check if coach has session at same time/date)
+    # Double booking prevention check
     existing = db.query(TrainingSession).filter(
         TrainingSession.coach_id == coach.id,
         TrainingSession.date == training_in.date,
@@ -25,11 +25,25 @@ def create_training(
     if existing:
         raise HTTPException(status_code=400, detail="Coach already has a session at this time")
         
+    data = training_in.dict()
+    client_id = data.pop("client_id", None)
+    
     db_training = TrainingSession(
-        **training_in.dict(),
+        **data,
         coach_id=coach.id
     )
     db.add(db_training)
+    db.flush() # flush to get db_training.id
+    
+    if client_id:
+        from app.models.models import Booking, BookingStatus
+        booking = Booking(
+            training_id=db_training.id,
+            client_id=client_id,
+            status=BookingStatus.CONFIRMED
+        )
+        db.add(booking)
+        
     db.commit()
     db.refresh(db_training)
     return db_training

@@ -51,7 +51,7 @@ class TrainingSessionBase(BaseModel):
     status: TrainingStatus = TrainingStatus.PLANNED
 
 class TrainingSessionCreate(TrainingSessionBase):
-    pass
+    client_id: Optional[int] = None
 
 class TrainingSessionOut(TrainingSessionBase):
     id: int

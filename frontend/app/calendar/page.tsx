@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useCallback } from 'react';
-import { trainingApi } from '@/lib/api';
+import { trainingApi, userApi } from '@/lib/api';
 import { GlassCard } from '@/components/GlassCard';
 import { ChevronLeft, ChevronRight, Plus, Clock, X } from 'lucide-react';
 
@@ -24,19 +24,24 @@ function toDateStr(d: Date) {
 
 export default function CalendarPage() {
   const [sessions, setSessions] = useState<any[]>([]);
+  const [clients, setClients] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [weekBase, setWeekBase] = useState(new Date());
   const [showModal, setShowModal] = useState(false);
-  const [form, setForm] = useState({ title: '', date: '', start_time: '', end_time: '', capacity: 1 });
+  const [form, setForm] = useState<any>({ title: '', date: '', start_time: '', end_time: '', capacity: 1, client_id: '', status: 'planned' });
   const [formError, setFormError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
   const weekDates = getWeekDates(weekBase);
 
-  const fetchSessions = useCallback(async () => {
+  const fetchData = useCallback(async () => {
     try {
-      const response = await trainingApi.list();
-      setSessions(response.data);
+      const [sessionsRes, clientsRes] = await Promise.all([
+        trainingApi.list(),
+        userApi.listClients()
+      ]);
+      setSessions(sessionsRes.data);
+      setClients(clientsRes.data);
     } catch {
       // handled by interceptor
     } finally {
@@ -44,7 +49,7 @@ export default function CalendarPage() {
     }
   }, []);
 
-  useEffect(() => { fetchSessions(); }, [fetchSessions]);
+  useEffect(() => { fetchData(); }, [fetchData]);
 
   const prevWeek = () => { const d = new Date(weekBase); d.setDate(d.getDate() - 7); setWeekBase(d); };
   const nextWeek = () => { const d = new Date(weekBase); d.setDate(d.getDate() + 7); setWeekBase(d); };
@@ -59,10 +64,16 @@ export default function CalendarPage() {
     setFormError('');
     setSubmitting(true);
     try {
-      await trainingApi.create(form);
+      const payload = { ...form };
+      if (payload.client_id) {
+        payload.client_id = parseInt(payload.client_id);
+      } else {
+        delete payload.client_id;
+      }
+      await trainingApi.create(payload);
       setShowModal(false);
-      setForm({ title: '', date: '', start_time: '', end_time: '', capacity: 1 });
-      fetchSessions();
+      setForm({ title: '', date: '', start_time: '', end_time: '', capacity: 1, client_id: '', status: 'planned' });
+      fetchData();
     } catch (err: any) {
       setFormError(err.response?.data?.detail || 'Failed to create session');
     } finally {
@@ -136,7 +147,10 @@ export default function CalendarPage() {
                         cursor: 'pointer',
                         marginBottom: '2px'
                       }}>
-                        <p style={{ fontWeight: 700 }}>{event.title}</p>
+                        <p style={{ fontWeight: 700 }}>
+                           {event.title}
+                           {event.status === 'completed' && <span style={{ marginLeft: '6px', fontSize: '0.7rem', color: '#10b981' }}>(Done)</span>}
+                        </p>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '4px', opacity: 0.8 }}>
                           <Clock size={12} /> {event.start_time?.substring(0, 5)}
                         </div>
@@ -153,11 +167,8 @@ export default function CalendarPage() {
       {/* Schedule Modal */}
       {showModal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <GlassCard style={{ width: '100%', maxWidth: '480px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-              <h3 style={{ fontWeight: 700, fontSize: '1.25rem' }}>Schedule Session</h3>
-              <button onClick={() => setShowModal(false)} style={{ background: 'transparent', border: 'none', color: 'white', cursor: 'pointer' }}><X size={20} /></button>
-            </div>
+          <GlassCard style={{ width: '100%', maxWidth: '480px', maxHeight: '90vh', overflowY: 'auto' }}>
+            <h3 style={{ fontWeight: 700, fontSize: '1.25rem', marginBottom: '24px' }}>Schedule Session</h3>
             {formError && (
               <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#ef4444', padding: '10px', borderRadius: '8px', marginBottom: '16px', fontSize: '0.9rem' }}>
                 {formError}
@@ -167,8 +178,6 @@ export default function CalendarPage() {
               {[
                 { label: 'Title', key: 'title', type: 'text', placeholder: 'e.g. Strength Workout' },
                 { label: 'Date', key: 'date', type: 'date', placeholder: '' },
-                { label: 'Start Time', key: 'start_time', type: 'time', placeholder: '' },
-                { label: 'End Time', key: 'end_time', type: 'time', placeholder: '' },
               ].map(({ label, key, type, placeholder }) => (
                 <div key={key}>
                   <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>{label}</label>
@@ -180,18 +189,56 @@ export default function CalendarPage() {
                   />
                 </div>
               ))}
-              <div>
-                <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Capacity</label>
-                <input
-                  type="number" min={1} max={50} required
-                  value={form.capacity}
-                  onChange={(e) => setForm({ ...form, capacity: parseInt(e.target.value) })}
-                  style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', borderRadius: '10px', padding: '10px 14px', color: 'white', outline: 'none' }}
-                />
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Start Time</label>
+                  <input type="time" required value={form.start_time} onChange={(e) => setForm({ ...form, start_time: e.target.value })}
+                    style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', borderRadius: '10px', padding: '10px 14px', color: 'white', outline: 'none', colorScheme: 'dark' }} />
+                </div>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>End Time</label>
+                  <input type="time" required value={form.end_time} onChange={(e) => setForm({ ...form, end_time: e.target.value })}
+                    style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', borderRadius: '10px', padding: '10px 14px', color: 'white', outline: 'none', colorScheme: 'dark' }} />
+                </div>
               </div>
-              <button type="submit" className="btn btn-primary" style={{ justifyContent: 'center' }} disabled={submitting}>
-                {submitting ? 'Scheduling...' : 'Schedule Session'}
-              </button>
+
+              <div>
+                <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Invite Client</label>
+                <select value={form.client_id || ''} onChange={(e) => setForm({ ...form, client_id: e.target.value })}
+                  style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', borderRadius: '10px', padding: '10px 14px', color: 'white', outline: 'none', appearance: 'none' }}>
+                  <option style={{ color: 'black' }} value="">Optional: Select a client</option>
+                  {clients.map(c => (
+                    <option style={{ color: 'black' }} key={c.id} value={c.id}>
+                      {[c.first_name, c.last_name].filter(Boolean).join(' ') || c.email}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Capacity</label>
+                  <input type="number" min={1} max={50} required value={form.capacity} onChange={(e) => setForm({ ...form, capacity: parseInt(e.target.value) })}
+                    style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', borderRadius: '10px', padding: '10px 14px', color: 'white', outline: 'none' }} />
+                </div>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Status</label>
+                  <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}
+                    style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', borderRadius: '10px', padding: '10px 14px', color: 'white', outline: 'none', appearance: 'none' }}>
+                    <option style={{ color: 'black' }} value="planned">Planned</option>
+                    <option style={{ color: 'black' }} value="completed">Completed</option>
+                  </select>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
+                <button type="button" className="btn btn-secondary" style={{ flex: 1 }} onClick={() => setShowModal(false)}>
+                  Cancel
+                </button>
+                <button type="submit" className="btn btn-primary" style={{ flex: 1 }} disabled={submitting}>
+                  {submitting ? 'Scheduling...' : 'Schedule Session'}
+                </button>
+              </div>
             </form>
           </GlassCard>
         </div>

@@ -7,8 +7,18 @@ import { GlassCard } from '@/components/GlassCard';
 import { Dumbbell, Lock, Mail } from 'lucide-react';
 
 function LoginForm() {
+  const [isRegister, setIsRegister] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  
+  // Registration fields
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [age, setAge] = useState('');
+  const [phone, setPhone] = useState('');
+  const [telegram, setTelegram] = useState('');
+  const [role, setRole] = useState('client');
+
   const [error, setError] = useState('');
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -25,27 +35,49 @@ function LoginForm() {
     window.location.href = `http://localhost:8000/api/auth/${provider}/login`;
   };
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     try {
+      if (isRegister) {
+        await authApi.register({
+          email,
+          password,
+          first_name: firstName,
+          last_name: lastName,
+          age: parseInt(age) || undefined,
+          phone_number: phone,
+          telegram_username: telegram,
+          role
+        });
+        // Auto-login after register
+      }
+
       const response = await authApi.login({ username: email, password });
       localStorage.setItem('token', response.data.access_token);
+      
+      // We should ideally fetch /api/users/me and set role in context. 
+      // For now, assume default access and let backend restrict based on token.
+      
       router.push('/');
-    } catch {
-      setError('Invalid email or password');
+    } catch (err: any) {
+      setError(err.response?.data?.detail || 'Authentication failed');
     }
   };
 
   return (
     <div className="login-page">
-      <GlassCard style={{ width: '100%', maxWidth: '420px' }}>
+      <GlassCard style={{ width: '100%', maxWidth: '420px', maxHeight: '90vh', overflowY: 'auto' }}>
         <div style={{ textAlign: 'center', marginBottom: '32px' }}>
           <div style={{ width: '60px', height: '60px', background: 'var(--primary)', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
             <Dumbbell size={32} color="white" />
           </div>
-          <h2 style={{ fontSize: '1.5rem', fontWeight: 700 }}>Welcome Back</h2>
-          <p style={{ color: 'rgba(255,255,255,0.5)', marginTop: '8px' }}>Login to TrackFit</p>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 700 }}>
+            {isRegister ? 'Create an Account' : 'Welcome Back'}
+          </h2>
+          <p style={{ color: 'rgba(255,255,255,0.5)', marginTop: '8px' }}>
+            {isRegister ? 'Sign up for TrackFit' : 'Login to TrackFit'}
+          </p>
         </div>
 
         {error && (
@@ -54,8 +86,23 @@ function LoginForm() {
           </div>
         )}
 
-        <form onSubmit={handleLogin}>
-          <div style={{ marginBottom: '20px' }}>
+        <form onSubmit={handleAuth}>
+          {isRegister && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
+              <div>
+                <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.9rem', color: 'rgba(255,255,255,0.7)' }}>First Name</label>
+                <input type="text" required value={firstName} onChange={(e) => setFirstName(e.target.value)}
+                  style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', borderRadius: '12px', padding: '12px', color: 'white', outline: 'none' }} />
+              </div>
+              <div>
+                <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.9rem', color: 'rgba(255,255,255,0.7)' }}>Last Name</label>
+                <input type="text" required value={lastName} onChange={(e) => setLastName(e.target.value)}
+                  style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', borderRadius: '12px', padding: '12px', color: 'white', outline: 'none' }} />
+              </div>
+            </div>
+          )}
+
+          <div style={{ marginBottom: isRegister ? '16px' : '20px' }}>
             <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.9rem', color: 'rgba(255,255,255,0.7)' }}>Email Address</label>
             <div style={{ position: 'relative' }}>
               <Mail size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', opacity: 0.5 }} />
@@ -65,7 +112,7 @@ function LoginForm() {
             </div>
           </div>
 
-          <div style={{ marginBottom: '32px' }}>
+          <div style={{ marginBottom: isRegister ? '16px' : '32px' }}>
             <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.9rem', color: 'rgba(255,255,255,0.7)' }}>Password</label>
             <div style={{ position: 'relative' }}>
               <Lock size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', opacity: 0.5 }} />
@@ -75,9 +122,49 @@ function LoginForm() {
             </div>
           </div>
 
+          {isRegister && (
+             <>
+               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.9rem', color: 'rgba(255,255,255,0.7)' }}>Age</label>
+                    <input type="number" required min={1} value={age} onChange={(e) => setAge(e.target.value)}
+                      style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', borderRadius: '12px', padding: '12px', color: 'white', outline: 'none' }} />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.9rem', color: 'rgba(255,255,255,0.7)' }}>Phone Number</label>
+                    <input type="text" required value={phone} onChange={(e) => setPhone(e.target.value)}
+                      style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', borderRadius: '12px', padding: '12px', color: 'white', outline: 'none' }} />
+                  </div>
+               </div>
+               <div style={{ marginBottom: '16px' }}>
+                  <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.9rem', color: 'rgba(255,255,255,0.7)' }}>Telegram Username</label>
+                  <input type="text" required value={telegram} onChange={(e) => setTelegram(e.target.value)}
+                    style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', borderRadius: '12px', padding: '12px', color: 'white', outline: 'none' }}
+                    placeholder="@username" />
+               </div>
+               <div style={{ marginBottom: '32px' }}>
+                  <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.9rem', color: 'rgba(255,255,255,0.7)' }}>I am a...</label>
+                  <select value={role} onChange={(e) => setRole(e.target.value)}
+                    style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', borderRadius: '12px', padding: '12px', color: 'white', outline: 'none', appearance: 'none' }}>
+                    <option style={{ color: 'black' }} value="client">Client</option>
+                    <option style={{ color: 'black' }} value="coach">Trainer (Coach)</option>
+                  </select>
+               </div>
+             </>
+          )}
+
           <button type="submit" className="btn btn-primary" style={{ width: '100%', justifyContent: 'center', marginBottom: '20px' }}>
-            Sign In
+            {isRegister ? 'Sign Up' : 'Sign In'}
           </button>
+          
+          <div style={{ textAlign: 'center', fontSize: '0.9rem' }}>
+            <span style={{ color: 'rgba(255,255,255,0.6)' }}>
+              {isRegister ? 'Already have an account?' : "Don't have an account?"}
+            </span>
+            <button type="button" onClick={() => setIsRegister(!isRegister)} style={{ background: 'none', border: 'none', color: 'var(--primary)', fontWeight: 600, marginLeft: '6px', cursor: 'pointer' }}>
+              {isRegister ? 'Sign In' : 'Sign Up'}
+            </button>
+          </div>
 
           <div style={{ position: 'relative', textAlign: 'center', margin: '24px 0' }}>
             <div style={{ position: 'absolute', top: '50%', left: 0, right: 0, height: '1px', background: 'rgba(255,255,255,0.1)' }}></div>

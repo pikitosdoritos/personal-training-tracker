@@ -11,7 +11,7 @@ export default function ClientsPage() {
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
-  const [form, setForm] = useState({ full_name: '', email: '', password: '', contact_info: '' });
+  const [form, setForm] = useState<any>({ first_name: '', last_name: '', email: '', password: '', age: '', phone_number: '', telegram_username: '' });
   const [formError, setFormError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
@@ -33,9 +33,10 @@ export default function ClientsPage() {
     const q = search.toLowerCase();
     setFiltered(
       clients.filter(c =>
-        (c.full_name || '').toLowerCase().includes(q) ||
+        (c.first_name || '').toLowerCase().includes(q) ||
+        (c.last_name || '').toLowerCase().includes(q) ||
         (c.email || '').toLowerCase().includes(q) ||
-        (c.contact_info || '').toLowerCase().includes(q)
+        (c.phone_number || '').toLowerCase().includes(q)
       )
     );
   }, [search, clients]);
@@ -47,7 +48,7 @@ export default function ClientsPage() {
     try {
       await authApi.register({ ...form, role: 'client' });
       setShowModal(false);
-      setForm({ full_name: '', email: '', password: '', contact_info: '' });
+      setForm({ first_name: '', last_name: '', email: '', password: '', age: '', phone_number: '', telegram_username: '' });
       fetchClients();
     } catch (err: any) {
       setFormError(err.response?.data?.detail || 'Failed to add client');
@@ -99,26 +100,28 @@ export default function ClientsPage() {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((client) => (
-                <tr key={client.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
-                  <td style={{ padding: '20px 24px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                      <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'linear-gradient(135deg, var(--primary), var(--secondary))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600, flexShrink: 0 }}>
-                        {client.full_name?.charAt(0)?.toUpperCase() || 'U'}
+              {filtered.map((client) => {
+                const displayName = [client.first_name, client.last_name].filter(Boolean).join(' ') || 'Unknown';
+                return (
+                  <tr key={client.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                    <td style={{ padding: '20px 24px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'linear-gradient(135deg, var(--primary), var(--secondary))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600, flexShrink: 0 }}>
+                          {displayName.charAt(0).toUpperCase()}
+                        </div>
+                        <span>{displayName}</span>
                       </div>
-                      <span>{client.full_name || 'Unknown'}</span>
-                    </div>
-                  </td>
-                  <td style={{ padding: '20px 24px' }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', color: 'rgba(255,255,255,0.7)' }}>
-                        <Mail size={14} /> {client.email}
+                    </td>
+                    <td style={{ padding: '20px 24px' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', color: 'rgba(255,255,255,0.7)' }}>
+                          <Mail size={14} /> {client.email}
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', color: 'rgba(255,255,255,0.7)' }}>
+                          <Phone size={14} /> {client.phone_number || 'N/A'}
+                        </div>
                       </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', color: 'rgba(255,255,255,0.7)' }}>
-                        <Phone size={14} /> {client.contact_info || 'N/A'}
-                      </div>
-                    </div>
-                  </td>
+                    </td>
                   <td style={{ padding: '20px 24px' }}>
                     <span style={{ padding: '4px 12px', borderRadius: '20px', fontSize: '0.8rem', background: 'rgba(16,185,129,0.1)', color: '#10b981', border: '1px solid rgba(16,185,129,0.2)' }}>
                       Active
@@ -130,7 +133,8 @@ export default function ClientsPage() {
                     </button>
                   </td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         )}
@@ -139,37 +143,66 @@ export default function ClientsPage() {
       {/* Add Client Modal */}
       {showModal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <GlassCard style={{ width: '100%', maxWidth: '480px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-              <h3 style={{ fontWeight: 700, fontSize: '1.25rem' }}>Add New Client</h3>
-              <button onClick={() => setShowModal(false)} style={{ background: 'transparent', border: 'none', color: 'white', cursor: 'pointer' }}><X size={20} /></button>
-            </div>
+          <GlassCard style={{ width: '100%', maxWidth: '480px', maxHeight: '90vh', overflowY: 'auto' }}>
+            <h3 style={{ fontWeight: 700, fontSize: '1.25rem', marginBottom: '24px' }}>Add New Client</h3>
             {formError && (
               <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#ef4444', padding: '10px', borderRadius: '8px', marginBottom: '16px', fontSize: '0.9rem' }}>
                 {formError}
               </div>
             )}
             <form onSubmit={handleAddClient} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>First Name</label>
+                  <input type="text" required value={form.first_name || ''} onChange={(e) => setForm({ ...form, first_name: e.target.value })}
+                    style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', borderRadius: '10px', padding: '10px 14px', color: 'white', outline: 'none' }} />
+                </div>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Last Name</label>
+                  <input type="text" required value={form.last_name || ''} onChange={(e) => setForm({ ...form, last_name: e.target.value })}
+                    style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', borderRadius: '10px', padding: '10px 14px', color: 'white', outline: 'none' }} />
+                </div>
+              </div>
               {[
-                { label: 'Full Name', key: 'full_name', type: 'text', placeholder: 'John Doe' },
                 { label: 'Email', key: 'email', type: 'email', placeholder: 'client@example.com' },
                 { label: 'Password', key: 'password', type: 'password', placeholder: '••••••••' },
-                { label: 'Phone / Contact', key: 'contact_info', type: 'text', placeholder: '555-0100' },
               ].map(({ label, key, type, placeholder }) => (
                 <div key={key}>
                   <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>{label}</label>
                   <input
-                    type={type} placeholder={placeholder}
-                    required={key !== 'contact_info'}
-                    value={(form as any)[key]}
+                    type={type} placeholder={placeholder} required
+                    value={(form as any)[key] || ''}
                     onChange={(e) => setForm({ ...form, [key]: e.target.value })}
                     style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', borderRadius: '10px', padding: '10px 14px', color: 'white', outline: 'none' }}
                   />
                 </div>
               ))}
-              <button type="submit" className="btn btn-primary" style={{ justifyContent: 'center' }} disabled={submitting}>
-                {submitting ? 'Adding...' : 'Add Client'}
-              </button>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Age</label>
+                  <input type="number" required min={1} value={form.age || ''} onChange={(e) => setForm({ ...form, age: parseInt(e.target.value) || '' as any })}
+                    style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', borderRadius: '10px', padding: '10px 14px', color: 'white', outline: 'none' }} />
+                </div>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Phone Number</label>
+                  <input type="text" required value={form.phone_number || ''} onChange={(e) => setForm({ ...form, phone_number: e.target.value })}
+                    style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', borderRadius: '10px', padding: '10px 14px', color: 'white', outline: 'none' }} />
+                </div>
+              </div>
+              <div>
+                <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Telegram Username</label>
+                <input type="text" required value={form.telegram_username || ''} onChange={(e) => setForm({ ...form, telegram_username: e.target.value })}
+                  style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', borderRadius: '10px', padding: '10px 14px', color: 'white', outline: 'none' }} placeholder="@username" />
+              </div>
+
+              <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
+                <button type="button" className="btn btn-secondary" style={{ flex: 1 }} onClick={() => setShowModal(false)}>
+                  Cancel
+                </button>
+                <button type="submit" className="btn btn-primary" style={{ flex: 1 }} disabled={submitting}>
+                  {submitting ? 'Adding...' : 'Add Client'}
+                </button>
+              </div>
             </form>
           </GlassCard>
         </div>
