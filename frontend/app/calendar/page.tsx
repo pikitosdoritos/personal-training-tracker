@@ -32,20 +32,28 @@ export default function CalendarPage() {
   const [form, setForm] = useState<any>({ title: '', date: '', start_time: '', end_time: '', capacity: 1, client_id: '', status: 'planned', training_type_id: '' });
   const [formError, setFormError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [workingHours, setWorkingHours] = useState<{days: string[], start: string, end: string} | null>(null);
 
   const weekDates = getWeekDates(weekBase);
 
   const fetchData = useCallback(async () => {
     try {
       const tTypesApi = (await import('@/lib/api')).trainingTypesApi;
-      const [sessionsRes, clientsRes, typesRes] = await Promise.all([
+      const [sessionsRes, clientsRes, typesRes, meRes] = await Promise.all([
         trainingApi.list(),
         userApi.listClients(),
-        tTypesApi.list()
+        tTypesApi.list(),
+        userApi.me()
       ]);
       setSessions(sessionsRes.data);
       setClients(clientsRes.data);
       setTrainingTypes(typesRes.data);
+      
+      try {
+        if (meRes.data.contact_info && meRes.data.contact_info.includes('days')) {
+          setWorkingHours(JSON.parse(meRes.data.contact_info));
+        }
+      } catch (e) {}
     } catch {
       // handled by interceptor
     } finally {
@@ -58,6 +66,16 @@ export default function CalendarPage() {
   const prevWeek = () => { const d = new Date(weekBase); d.setDate(d.getDate() - 7); setWeekBase(d); };
   const nextWeek = () => { const d = new Date(weekBase); d.setDate(d.getDate() + 7); setWeekBase(d); };
 
+  const checkIsWorkingHour = (d: Date, t: string) => {
+      if (!workingHours || !workingHours.start || !workingHours.end) return true;
+      const dayStr = d.toLocaleDateString('en-US', { weekday: 'short' });
+      if (!workingHours.days.includes(dayStr)) return false;
+      const tH = parseInt(t.split(':')[0]);
+      const sH = parseInt(workingHours.start.split(':')[0]);
+      const eH = parseInt(workingHours.end.split(':')[0]);
+      return tH >= sH && tH < eH;
+  };
+
   const getEventForDayHour = (date: Date, hour: string) => {
     const dateStr = toDateStr(date);
     return sessions.filter(s => s.date === dateStr && s.start_time.substring(0, 5) === hour);
@@ -66,6 +84,15 @@ export default function CalendarPage() {
   const handleCreateSession = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError('');
+    
+    if (workingHours && form.date && form.start_time) {
+        const d = new Date(form.date);
+        if (!checkIsWorkingHour(d, form.start_time)) {
+             setFormError(`Cannot schedule outside of your working hours (${workingHours.start} - ${workingHours.end} on ${workingHours.days.join(', ')}).`);
+             return;
+        }
+    }
+
     setSubmitting(true);
     try {
       const payload = { ...form };
@@ -148,8 +175,14 @@ export default function CalendarPage() {
               </div>
               {weekDates.map((d, i) => {
                 const events = getEventForDayHour(d, hour);
+                const isWorking = checkIsWorkingHour(d, hour);
                 return (
-                  <div key={i} style={{ borderRight: '1px solid rgba(255,255,255,0.03)', padding: '4px', position: 'relative' }}>
+                  <div key={i} style={{ 
+                      borderRight: '1px solid rgba(255,255,255,0.03)', 
+                      padding: '4px', position: 'relative',
+                      background: isWorking ? 'rgba(16,185,129,0.03)' : 'rgba(0,0,0,0.1)' 
+                  }}>
+                    {!isWorking && events.length === 0 && <div style={{ position: 'absolute', inset: 0, backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,0.02) 10px, rgba(255,255,255,0.02) 20px)' }} />}
                     {events.map(event => (
                       <div key={event.id} onClick={() => handleCancelSession(event.id)} style={{
                         background: event.status === 'cancelled' ? 'rgba(239,68,68,0.2)' : 'var(--primary)',

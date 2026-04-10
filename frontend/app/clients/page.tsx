@@ -47,7 +47,8 @@ export default function ClientsPage() {
     setSubmitting(true);
     try {
       const generatedEmail = `${form.first_name.toLowerCase().replace(/\s/g, '')}.${form.last_name.toLowerCase().replace(/\s/g, '')}@client.trackfit.local`;
-      await authApi.register({ ...form, email: generatedEmail, role: 'client' });
+      const dummyPassword = Math.random().toString(36).slice(-8) + 'A1!'; // Securely generated default fallback password
+      await authApi.register({ ...form, email: generatedEmail, password: dummyPassword, role: 'client' });
       setShowModal(false);
       setForm({ first_name: '', last_name: '', password: '', age: '', phone_number: '', telegram_username: '' });
       fetchClients();
@@ -165,15 +166,6 @@ export default function ClientsPage() {
                 </div>
               </div>
               
-              <div>
-                <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Password</label>
-                <input
-                  type="password" placeholder="••••••••" required
-                  value={form.password || ''}
-                  onChange={(e) => setForm({ ...form, password: e.target.value })}
-                  style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', borderRadius: '10px', padding: '10px 14px', color: 'white', outline: 'none' }}
-                />
-              </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div>
                   <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Age</label>

@@ -3,11 +3,13 @@
 import React, { useEffect, useState } from 'react';
 import { userApi } from '@/lib/api';
 import { GlassCard } from '@/components/GlassCard';
-import { User, Mail, Phone, Save, CheckCircle } from 'lucide-react';
+import { User, Mail, Phone, Save, CheckCircle, Upload } from 'lucide-react';
 
 export default function ProfilePage() {
   const [profile, setProfile] = useState<any>(null);
   const [form, setForm] = useState({ first_name: '', last_name: '', email: '', phone_number: '', telegram_username: '', photo_url: '', contact_info: '' });
+  const [workingHours, setWorkingHours] = useState<{days: string[], start: string, end: string}>({ days: ['Mon','Tue','Wed','Thu','Fri'], start: '09:00', end: '18:00' });
+  const [fileName, setFileName] = useState('');
   const [types, setTypes] = useState<any[]>([]);
   const [newType, setNewType] = useState({ name: 'Individual', duration_minutes: 60, cost: 500 });
   const [loading, setLoading] = useState(true);
@@ -18,6 +20,7 @@ export default function ProfilePage() {
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      setFileName(file.name);
       const reader = new FileReader();
       reader.onloadend = () => {
         setForm(prev => ({ ...prev, photo_url: reader.result as string }));
@@ -39,6 +42,12 @@ export default function ProfilePage() {
         photo_url: res.data.photo_url || '',
         contact_info: res.data.contact_info || '',
       });
+
+      try {
+        if (res.data.contact_info && res.data.contact_info.includes('days')) {
+          setWorkingHours(JSON.parse(res.data.contact_info));
+        }
+      } catch(e) {}
       
       // Fetch training types
       try {
@@ -184,15 +193,55 @@ export default function ProfilePage() {
               
               <div>
                 <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Profile Photo</label>
-                <input type="file" accept="image/*" onChange={handlePhotoUpload}
-                  style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', borderRadius: '10px', padding: '10px 14px', color: 'white', outline: 'none' }} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                    {form.photo_url ? (
+                        <div style={{ width: '40px', height: '40px', borderRadius: '50%', overflow: 'hidden', flexShrink: 0, border: '1px solid var(--card-border)' }}>
+                           <img src={form.photo_url} alt="Profile preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        </div>
+                    ) : (
+                        <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px dashed var(--card-border)' }}>
+                           <User size={20} opacity={0.4} />
+                        </div>
+                    )}
+                    <label style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'rgba(59,130,246,0.1)', color: 'var(--primary)', padding: '10px 16px', borderRadius: '12px', fontWeight: 600, fontSize: '0.85rem', border: '1px solid rgba(59,130,246,0.2)', transition: 'var(--transition)' }}>
+                        <Upload size={16} />
+                        {fileName ? 'Change Photo' : 'Upload File'}
+                        <input type="file" accept="image/*" onChange={handlePhotoUpload} style={{ display: 'none' }} />
+                    </label>
+                    <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', maxWidth: '120px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {fileName || 'No file selected'}
+                    </span>
+                </div>
               </div>
 
               {profile?.role === 'coach' && (
-                <div>
-                  <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Working Hours / Schedule</label>
-                  <textarea placeholder="e.g. Mon-Fri 09:00 - 18:00" value={form.contact_info} onChange={(e) => setForm({ ...form, contact_info: e.target.value })}
-                    style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', borderRadius: '10px', padding: '10px 14px', color: 'white', outline: 'none', resize: 'vertical', minHeight: '80px' }} />
+                <div style={{ background: 'rgba(0,0,0,0.1)', padding: '16px', borderRadius: '16px', border: '1px solid var(--card-border)' }}>
+                  <label style={{ display: 'block', marginBottom: '16px', fontSize: '0.9rem', color: 'rgba(255,255,255,0.8)', fontWeight: 600 }}>Working Hours / Schedule</label>
+                  
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '16px' }}>
+                    {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(day => {
+                        const isActive = workingHours.days.includes(day);
+                        return (
+                            <button type="button" key={day} onClick={() => toggleDay(day)}
+                               style={{ padding: '8px 12px', borderRadius: '8px', border: isActive ? '1px solid var(--primary)' : '1px solid var(--card-border)', background: isActive ? 'var(--primary)' : 'transparent', color: isActive ? 'white' : 'rgba(255,255,255,0.6)', cursor: 'pointer', fontSize: '0.85rem', fontWeight: isActive ? 600 : 400, transition: 'var(--transition)' }}>
+                                {day}
+                            </button>
+                        )
+                    })}
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', maxWidth: '300px' }}>
+                     <div>
+                        <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)' }}>Start Time</label>
+                        <input type="time" value={workingHours.start} onChange={(e) => setWorkingHours({...workingHours, start: e.target.value})}
+                          style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', borderRadius: '10px', padding: '10px 14px', color: 'white', outline: 'none', colorScheme: 'dark' }} />
+                     </div>
+                     <div>
+                        <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)' }}>End Time</label>
+                        <input type="time" value={workingHours.end} onChange={(e) => setWorkingHours({...workingHours, end: e.target.value})}
+                          style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', borderRadius: '10px', padding: '10px 14px', color: 'white', outline: 'none', colorScheme: 'dark' }} />
+                     </div>
+                  </div>
                 </div>
               )}
 
