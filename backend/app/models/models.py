@@ -22,6 +22,7 @@ class User(Base):
     age = Column(Integer)
     phone_number = Column(String)
     telegram_username = Column(String)
+    photo_url = Column(String)
     role = Column(String, default=UserRole.CLIENT)
     contact_info = Column(String)
     
@@ -42,12 +43,25 @@ class Pricing(Base):
 class TrainingStatus(str, enum.Enum):
     PLANNED = "planned"
     COMPLETED = "completed"
+    CANCELLED = "cancelled"
+
+class TrainingType(Base):
+    __tablename__ = "training_types"
+
+    id = Column(Integer, primary_key=True, index=True)
+    coach_id = Column(Integer, ForeignKey("users.id"))
+    name = Column(String, nullable=False)
+    duration_minutes = Column(Integer, default=60)
+    cost = Column(Float, nullable=False)
+
+    coach = relationship("User")
 
 class TrainingSession(Base):
     __tablename__ = "training_sessions"
 
     id = Column(Integer, primary_key=True, index=True)
     coach_id = Column(Integer, ForeignKey("users.id"))
+    training_type_id = Column(Integer, ForeignKey("training_types.id"), nullable=True)
     title = Column(String)
     date = Column(Date, nullable=False)
     start_time = Column(Time, nullable=False)

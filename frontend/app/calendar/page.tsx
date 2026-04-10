@@ -25,10 +25,11 @@ function toDateStr(d: Date) {
 export default function CalendarPage() {
   const [sessions, setSessions] = useState<any[]>([]);
   const [clients, setClients] = useState<any[]>([]);
+  const [trainingTypes, setTrainingTypes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [weekBase, setWeekBase] = useState(new Date());
   const [showModal, setShowModal] = useState(false);
-  const [form, setForm] = useState<any>({ title: '', date: '', start_time: '', end_time: '', capacity: 1, client_id: '', status: 'planned' });
+  const [form, setForm] = useState<any>({ title: '', date: '', start_time: '', end_time: '', capacity: 1, client_id: '', status: 'planned', training_type_id: '' });
   const [formError, setFormError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
@@ -36,12 +37,15 @@ export default function CalendarPage() {
 
   const fetchData = useCallback(async () => {
     try {
-      const [sessionsRes, clientsRes] = await Promise.all([
+      const tTypesApi = (await import('@/lib/api')).trainingTypesApi;
+      const [sessionsRes, clientsRes, typesRes] = await Promise.all([
         trainingApi.list(),
-        userApi.listClients()
+        userApi.listClients(),
+        tTypesApi.list()
       ]);
       setSessions(sessionsRes.data);
       setClients(clientsRes.data);
+      setTrainingTypes(typesRes.data);
     } catch {
       // handled by interceptor
     } finally {
@@ -65,20 +69,29 @@ export default function CalendarPage() {
     setSubmitting(true);
     try {
       const payload = { ...form };
-      if (payload.client_id) {
-        payload.client_id = parseInt(payload.client_id);
-      } else {
-        delete payload.client_id;
-      }
+      if (payload.client_id) payload.client_id = parseInt(payload.client_id);
+      else delete payload.client_id;
+      
+      if (payload.training_type_id) payload.training_type_id = parseInt(payload.training_type_id);
+      else delete payload.training_type_id;
+
       await trainingApi.create(payload);
       setShowModal(false);
-      setForm({ title: '', date: '', start_time: '', end_time: '', capacity: 1, client_id: '', status: 'planned' });
+      setForm({ title: '', date: '', start_time: '', end_time: '', capacity: 1, client_id: '', status: 'planned', training_type_id: '' });
       fetchData();
     } catch (err: any) {
       setFormError(err.response?.data?.detail || 'Failed to create session');
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const handleCancelSession = async (id: number) => {
+    if (!confirm("Are you sure you want to cancel this training? SMS/Telegram will be sent.")) return;
+    try {
+        await trainingApi.delete(id);
+        fetchData();
+    } catch (e) { alert("Failed to cancel"); }
   };
 
   const formatWeekRange = () => {
@@ -138,14 +151,16 @@ export default function CalendarPage() {
                 return (
                   <div key={i} style={{ borderRight: '1px solid rgba(255,255,255,0.03)', padding: '4px', position: 'relative' }}>
                     {events.map(event => (
-                      <div key={event.id} style={{
-                        background: 'var(--primary)',
+                      <div key={event.id} onClick={() => handleCancelSession(event.id)} style={{
+                        background: event.status === 'cancelled' ? 'rgba(239,68,68,0.2)' : 'var(--primary)',
                         borderRadius: '8px',
                         padding: '8px',
                         fontSize: '0.8rem',
                         boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
                         cursor: 'pointer',
-                        marginBottom: '2px'
+                        marginBottom: '2px',
+                        textDecoration: event.status === 'cancelled' ? 'line-through' : 'none',
+                        opacity: event.status === 'cancelled' ? 0.6 : 1
                       }}>
                         <p style={{ fontWeight: 700 }}>
                            {event.title}
@@ -189,6 +204,26 @@ export default function CalendarPage() {
                   />
                 </div>
               ))}
+              
+              <div>
+                <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Training Type (Costs & Stats)</label>
+                <select value={form.training_type_id || ''} onChange={(e) => {
+                    const tid = e.target.value;
+                    const selected = trainingTypes.find(t => t.id === parseInt(tid));
+                    setForm({ 
+                        ...form, 
+                        training_type_id: tid, 
+                        title: selected ? selected.name : form.title 
+                    });
+                  }}
+                  style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', borderRadius: '10px', padding: '10px 14px', color: 'white', outline: 'none', appearance: 'none' }}>
+                  <option style={{ color: 'black' }} value="">Optional: Custom Training</option>
+                  {trainingTypes.map(t => (
+                    <option style={{ color: 'black' }} key={t.id} value={t.id}>{t.name} ({t.duration_minutes}m, {t.cost} UAH)</option>
+                  ))}
+                </select>
+              </div>
+
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div>
                   <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Start Time</label>

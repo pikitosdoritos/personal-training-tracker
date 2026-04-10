@@ -36,13 +36,17 @@ def create_training(
     db.flush() # flush to get db_training.id
     
     if client_id:
-        from app.models.models import Booking, BookingStatus
+        from app.models.models import Booking, BookingStatus, User
         booking = Booking(
             training_id=db_training.id,
             client_id=client_id,
             status=BookingStatus.CONFIRMED
         )
         db.add(booking)
+        
+        client = db.query(User).filter(User.id == client_id).first()
+        if client:
+            print(f"==== 📱 TELEGRAM/SMS MOCK ====\nSending to {client.phone_number} / {client.telegram_username}:\n'You have been added to training: {db_training.title} on {db_training.date}!'\n=============================")
         
     db.commit()
     db.refresh(db_training)
@@ -58,3 +62,22 @@ def get_training(training_id: int, db: Session = Depends(get_db)):
     if not training:
         raise HTTPException(status_code=404, detail="Training not found")
     return training
+
+@router.delete("/{training_id}")
+def cancel_training(training_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    training = db.query(TrainingSession).filter(TrainingSession.id == training_id).first()
+    if not training:
+        raise HTTPException(status_code=404, detail="Training not found")
+        
+    from app.models.models import TrainingStatus, Booking
+    training.status = TrainingStatus.CANCELLED
+    
+    # Notify all clients
+    bookings = db.query(Booking).filter(Booking.training_id == training.id).all()
+    for b in bookings:
+        client = db.query(User).filter(User.id == b.client_id).first()
+        if client:
+            print(f"==== 📱 TELEGRAM/SMS MOCK ====\nSending to {client.phone_number} / {client.telegram_username}:\n'TRAINING CANCELLED: {training.title} on {training.date}'\n=============================")
+            
+    db.commit()
+    return {"ok": True}

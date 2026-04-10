@@ -301,6 +301,8 @@ a {
     left: 0;
     height: 100vh;
     transform: translateX(-100%);
+    background: var(--background);
+    z-index: 200;
   }
 
   .sidebar.open {

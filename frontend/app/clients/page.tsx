@@ -46,9 +46,10 @@ export default function ClientsPage() {
     setFormError('');
     setSubmitting(true);
     try {
-      await authApi.register({ ...form, role: 'client' });
+      const generatedEmail = `${form.first_name.toLowerCase().replace(/\s/g, '')}.${form.last_name.toLowerCase().replace(/\s/g, '')}@client.trackfit.local`;
+      await authApi.register({ ...form, email: generatedEmail, role: 'client' });
       setShowModal(false);
-      setForm({ first_name: '', last_name: '', email: '', password: '', age: '', phone_number: '', telegram_username: '' });
+      setForm({ first_name: '', last_name: '', password: '', age: '', phone_number: '', telegram_username: '' });
       fetchClients();
     } catch (err: any) {
       setFormError(err.response?.data?.detail || 'Failed to add client');
@@ -142,8 +143,8 @@ export default function ClientsPage() {
 
       {/* Add Client Modal */}
       {showModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <GlassCard style={{ width: '100%', maxWidth: '480px', maxHeight: '90vh', overflowY: 'auto' }}>
+        <div style={{ position: 'fixed', inset: 0, padding: '20px', background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', overflowY: 'auto', zIndex: 1000 }}>
+          <GlassCard style={{ width: '100%', maxWidth: '480px', marginTop: '10vh', marginBottom: '10vh' }}>
             <h3 style={{ fontWeight: 700, fontSize: '1.25rem', marginBottom: '24px' }}>Add New Client</h3>
             {formError && (
               <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#ef4444', padding: '10px', borderRadius: '8px', marginBottom: '16px', fontSize: '0.9rem' }}>
@@ -163,20 +164,16 @@ export default function ClientsPage() {
                     style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', borderRadius: '10px', padding: '10px 14px', color: 'white', outline: 'none' }} />
                 </div>
               </div>
-              {[
-                { label: 'Email', key: 'email', type: 'email', placeholder: 'client@example.com' },
-                { label: 'Password', key: 'password', type: 'password', placeholder: '••••••••' },
-              ].map(({ label, key, type, placeholder }) => (
-                <div key={key}>
-                  <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>{label}</label>
-                  <input
-                    type={type} placeholder={placeholder} required
-                    value={(form as any)[key] || ''}
-                    onChange={(e) => setForm({ ...form, [key]: e.target.value })}
-                    style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', borderRadius: '10px', padding: '10px 14px', color: 'white', outline: 'none' }}
-                  />
-                </div>
-              ))}
+              
+              <div>
+                <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Password</label>
+                <input
+                  type="password" placeholder="••••••••" required
+                  value={form.password || ''}
+                  onChange={(e) => setForm({ ...form, password: e.target.value })}
+                  style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', borderRadius: '10px', padding: '10px 14px', color: 'white', outline: 'none' }}
+                />
+              </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div>
                   <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Age</label>

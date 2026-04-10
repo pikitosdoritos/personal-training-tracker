@@ -43,10 +43,16 @@ export const authApi = {
 
 export const trainingApi = {
   list: () => api.get('/api/trainings/'),
-  create: (data: { title: string; date: string; start_time: string; end_time: string; capacity: number }) =>
+  create: (data: { title: string; date: string; start_time: string; end_time: string; capacity: number; client_id?: number; status?: string }) =>
     api.post('/api/trainings/', data),
   get: (id: number) => api.get(`/api/trainings/${id}`),
   delete: (id: number) => api.delete(`/api/trainings/${id}`),
+};
+
+export const trainingTypesApi = {
+  list: () => api.get('/api/training_types/'),
+  create: (data: { name: string; duration_minutes: number; cost: number }) => api.post('/api/training_types/', data),
+  delete: (id: number) => api.delete(`/api/training_types/${id}`),
 };
 
 export const bookingApi = {

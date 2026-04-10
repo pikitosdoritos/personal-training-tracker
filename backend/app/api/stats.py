@@ -19,8 +19,25 @@ def get_dashboard_stats(
     
     total_sessions = db.query(TrainingSession).count()
     total_bookings = db.query(Booking).count()
-    total_income = db.query(func.sum(Payment.amount)).filter(Payment.status == PaymentStatus.PAID).scalar() or 0.0
-    pending_income = db.query(func.sum(Payment.amount)).filter(Payment.status == PaymentStatus.UNPAID).scalar() or 0.0
+    
+    # Income based on TrainingType.cost for completed sessions
+    from app.models.models import TrainingType, TrainingStatus
+    
+    completed_bookings = db.query(Booking).join(
+        TrainingSession, Booking.training_id == TrainingSession.id
+    ).join(
+        TrainingType, TrainingSession.training_type_id == TrainingType.id
+    ).filter(TrainingSession.status == TrainingStatus.COMPLETED)
+    
+    total_income = sum([b.training.training_type.cost for b in completed_bookings.all() if b.training.training_type])
+    
+    pending_bookings = db.query(Booking).join(
+        TrainingSession, Booking.training_id == TrainingSession.id
+    ).join(
+        TrainingType, TrainingSession.training_type_id == TrainingType.id
+    ).filter(TrainingSession.status == TrainingStatus.PLANNED)
+    
+    pending_income = sum([b.training.training_type.cost for b in pending_bookings.all() if b.training.training_type])
     
     # Monthly stats
     monthly_sessions = db.query(TrainingSession).filter(TrainingSession.date >= this_month.date()).count()
@@ -63,53 +80,87 @@ def get_finances(
     from sqlalchemy import extract
     from datetime import date
 
+    from app.models.models import TrainingType, TrainingStatus
+    
     today = date.today()
     monthly_data = []
+    
     for i in range(5, -1, -1):
-        # Calculate month/year going back i months
         month = today.month - i
         year = today.year
         while month <= 0:
             month += 12
             year -= 1
-        total = db.query(func.sum(Payment.amount)).filter(
-            Payment.status == PaymentStatus.PAID,
-            extract('month', Payment.payment_date) == month,
-            extract('year', Payment.payment_date) == year
-        ).scalar() or 0.0
+        
+        # Calculate totals for this month's completed sessions
+        month_bookings = db.query(Booking).join(
+            TrainingSession, Booking.training_id == TrainingSession.id
+        ).join(
+            TrainingType, TrainingSession.training_type_id == TrainingType.id
+        ).filter(
+            TrainingSession.status == TrainingStatus.COMPLETED,
+            extract('month', TrainingSession.date) == month,
+            extract('year', TrainingSession.date) == year
+        ).all()
+        
+        total = sum([b.training.training_type.cost for b in month_bookings if b.training.training_type])
+        
         monthly_data.append({
             "month": calendar.month_abbr[month],
             "income": round(total, 2),
             "target": 5000
         })
 
-    # Recent transactions
-    recent = db.query(Payment, User, Booking).join(
-        Booking, Payment.booking_id == Booking.id
-    ).join(
-        User, Payment.client_id == User.id
-    ).order_by(Payment.id.desc()).limit(20).all()
+    # Recent transactions based on completed bookings
+    recent_bookings = db.query(Booking).join(
+        TrainingSession, Booking.training_id == TrainingSession.id
+    ).filter(
+        TrainingSession.status.in_([TrainingStatus.COMPLETED, TrainingStatus.CANCELLED])
+    ).order_by(TrainingSession.date.desc()).limit(20).all()
 
     transactions = []
-    for payment, user, booking in recent:
+    for b in recent_bookings:
+        user = b.client
+        t_type = b.training.training_type
+        amount = t_type.cost if t_type else 0
         transactions.append({
-            "id": payment.id,
-            "client": user.full_name or user.email,
-            "amount": payment.amount,
-            "date": payment.payment_date.strftime("%b %d, %Y") if payment.payment_date else "Pending",
-            "status": payment.status.value if hasattr(payment.status, 'value') else payment.status,
-            "booking_id": booking.id
+            "id": b.id,
+            "client": user.first_name + " " + user.last_name if user.first_name else user.email,
+            "amount": amount,
+            "date": b.training.date.strftime("%b %d, %Y"),
+            "status": 'paid' if b.training.status == TrainingStatus.COMPLETED else 'cancelled',
+            "booking_id": b.id
         })
 
-    total_paid = db.query(func.sum(Payment.amount)).filter(Payment.status == PaymentStatus.PAID).scalar() or 0.0
-    total_pending = db.query(func.sum(Payment.amount)).filter(Payment.status == PaymentStatus.UNPAID).scalar() or 0.0
+    # Total income calculation
+    all_completed = db.query(Booking).join(
+        TrainingSession, Booking.training_id == TrainingSession.id
+    ).join(
+        TrainingType, TrainingSession.training_type_id == TrainingType.id
+    ).filter(TrainingSession.status == TrainingStatus.COMPLETED).all()
+    
+    total_paid = sum([b.training.training_type.cost for b in all_completed if b.training.training_type])
+    
+    all_pending = db.query(Booking).join(
+        TrainingSession, Booking.training_id == TrainingSession.id
+    ).join(
+        TrainingType, TrainingSession.training_type_id == TrainingType.id
+    ).filter(TrainingSession.status == TrainingStatus.PLANNED).all()
+    
+    total_pending = sum([b.training.training_type.cost for b in all_pending if b.training.training_type])
 
     # This month revenue
-    this_month_revenue = db.query(func.sum(Payment.amount)).filter(
-        Payment.status == PaymentStatus.PAID,
-        extract('month', Payment.payment_date) == today.month,
-        extract('year', Payment.payment_date) == today.year
-    ).scalar() or 0.0
+    this_month_bookings = db.query(Booking).join(
+        TrainingSession, Booking.training_id == TrainingSession.id
+    ).join(
+        TrainingType, TrainingSession.training_type_id == TrainingType.id
+    ).filter(
+        TrainingSession.status == TrainingStatus.COMPLETED,
+        extract('month', TrainingSession.date) == today.month,
+        extract('year', TrainingSession.date) == today.year
+    ).all()
+    
+    this_month_revenue = sum([b.training.training_type.cost for b in this_month_bookings if b.training.training_type])
 
     return {
         "monthly_data": monthly_data,

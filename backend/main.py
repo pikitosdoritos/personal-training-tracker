@@ -1,8 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api import auth, trainings, bookings, stats, users, social_auth
+from app.api import auth, trainings, bookings, stats, users, social_auth, training_types
 from app.core.database import init_db
-
 app = FastAPI(title="Training Tracker API")
 
 # Configure CORS
@@ -21,6 +20,7 @@ def on_startup():
 
 # Routes
 app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
+app.include_router(training_types.router, prefix="/api/training_types", tags=["training-types"])
 app.include_router(trainings.router, prefix="/api/trainings", tags=["trainings"])
 app.include_router(bookings.router, prefix="/api/bookings", tags=["bookings"])
 app.include_router(stats.router, prefix="/api/stats", tags=["stats"])

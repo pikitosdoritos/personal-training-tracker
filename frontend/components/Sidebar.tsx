@@ -45,16 +45,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ open = true, onClose }) => {
             </div>
             <span style={{ fontSize: '1.15rem', fontWeight: 700, letterSpacing: '-0.3px' }}>TrackFit</span>
           </div>
-          {/* Close button — only visible on mobile */}
-          {onClose && (
-            <button
-              onClick={onClose}
-              style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.5)', cursor: 'pointer', padding: '4px', display: 'flex' }}
-              aria-label="Close menu"
-            >
-              <X size={20} />
-            </button>
-          )}
         </div>
 
         {/* Nav */}

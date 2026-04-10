@@ -12,6 +12,7 @@ class UserBase(BaseModel):
     age: Optional[int] = None
     phone_number: Optional[str] = None
     telegram_username: Optional[str] = None
+    photo_url: Optional[str] = None
     role: UserRole = UserRole.CLIENT
     contact_info: Optional[str] = None
 
@@ -41,6 +42,21 @@ class PricingOut(PricingBase):
     class Config:
         from_attributes = True
 
+# Training Type Schemas
+class TrainingTypeBase(BaseModel):
+    name: str
+    duration_minutes: int = 60
+    cost: float
+
+class TrainingTypeCreate(TrainingTypeBase):
+    pass
+
+class TrainingTypeOut(TrainingTypeBase):
+    id: int
+    coach_id: int
+    class Config:
+        from_attributes = True
+
 # Training Session Schemas
 class TrainingSessionBase(BaseModel):
     title: str
@@ -48,6 +64,7 @@ class TrainingSessionBase(BaseModel):
     start_time: time
     end_time: time
     capacity: int = 1
+    training_type_id: Optional[int] = None
     status: TrainingStatus = TrainingStatus.PLANNED
 
 class TrainingSessionCreate(TrainingSessionBase):
