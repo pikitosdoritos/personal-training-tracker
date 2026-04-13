@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { userApi, authApi } from '@/lib/api';
 import { GlassCard } from '@/components/GlassCard';
-import { Search, UserPlus, Mail, Phone, MoreVertical, X } from 'lucide-react';
+import { Search, UserPlus, Mail, Phone, Edit, Trash, FileText, X } from 'lucide-react';
 
 export default function ClientsPage() {
   const [clients, setClients] = useState<any[]>([]);
@@ -11,7 +11,8 @@ export default function ClientsPage() {
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
-  const [form, setForm] = useState<any>({ first_name: '', last_name: '', email: '', password: '', age: '', phone_number: '', telegram_username: '' });
+  const [editingClient, setEditingClient] = useState<any>(null);
+  const [form, setForm] = useState<any>({ first_name: '', last_name: '', email: '', password: '', age: '', phone_number: '', telegram_username: '', notes: '' });
   const [formError, setFormError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
@@ -41,17 +42,22 @@ export default function ClientsPage() {
     );
   }, [search, clients]);
 
-  const handleAddClient = async (e: React.FormEvent) => {
+  const handleSaveClient = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError('');
     setSubmitting(true);
     try {
-      const randomString = Math.random().toString(36).substring(2, 10);
-      const generatedEmail = `client_${randomString}@trackfit.com`;
-      const dummyPassword = Math.random().toString(36).slice(-8) + 'A1!'; // Securely generated default fallback password
-      await authApi.register({ ...form, email: generatedEmail, password: dummyPassword, role: 'client' });
+      if (editingClient) {
+        await userApi.updateClient(editingClient.id, form);
+      } else {
+        const randomString = Math.random().toString(36).substring(2, 10);
+        const generatedEmail = `client_${randomString}@trackfit.com`;
+        const dummyPassword = Math.random().toString(36).slice(-8) + 'A1!'; // Securely generated default fallback password
+        await authApi.register({ ...form, email: generatedEmail, password: dummyPassword, role: 'client' });
+      }
       setShowModal(false);
-      setForm({ first_name: '', last_name: '', password: '', age: '', phone_number: '', telegram_username: '' });
+      setEditingClient(null);
+      setForm({ first_name: '', last_name: '', password: '', age: '', phone_number: '', telegram_username: '', notes: '' });
       fetchClients();
     } catch (err: any) {
       const detail = err.response?.data?.detail;
@@ -62,10 +68,33 @@ export default function ClientsPage() {
       } else if (detail) {
         setFormError(JSON.stringify(detail));
       } else {
-        setFormError('Failed to add client');
+        setFormError(editingClient ? 'Failed to update client' : 'Failed to add client');
       }
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleEditClick = (client: any) => {
+    setEditingClient(client);
+    setForm({
+      first_name: client.first_name || '',
+      last_name: client.last_name || '',
+      age: client.age || '',
+      phone_number: client.phone_number || '',
+      telegram_username: client.telegram_username || '',
+      notes: client.notes || ''
+    });
+    setShowModal(true);
+  };
+
+  const handleDeleteClient = async (id: number) => {
+    if (!confirm('Are you sure you want to delete this client?')) return;
+    try {
+      await userApi.deleteClient(id);
+      fetchClients();
+    } catch (err) {
+      alert('Failed to delete client');
     }
   };
 
@@ -78,7 +107,11 @@ export default function ClientsPage() {
           <h1 style={{ fontSize: '2.5rem', fontWeight: 700, marginBottom: '8px' }}>Clients</h1>
           <p style={{ color: 'rgba(255, 255, 255, 0.5)' }}>Manage your clients and their training progress.</p>
         </div>
-        <button className="btn btn-primary" onClick={() => setShowModal(true)}>
+        <button className="btn btn-primary" onClick={() => {
+          setEditingClient(null);
+          setForm({ first_name: '', last_name: '', password: '', age: '', phone_number: '', telegram_username: '', notes: '' });
+          setShowModal(true);
+        }}>
           <UserPlus size={20} />
           <span>Add Client</span>
         </button>
@@ -140,9 +173,14 @@ export default function ClientsPage() {
                     </span>
                   </td>
                   <td style={{ padding: '20px 24px', textAlign: 'right' }}>
-                    <button style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.5)', cursor: 'pointer' }}>
-                      <MoreVertical size={18} />
-                    </button>
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+                      <button onClick={() => handleEditClick(client)} style={{ background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.2)', color: '#3b82f6', cursor: 'pointer', padding: '6px', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="Edit Client">
+                        <Edit size={16} />
+                      </button>
+                      <button onClick={() => handleDeleteClient(client.id)} style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#ef4444', cursor: 'pointer', padding: '6px', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="Delete Client">
+                        <Trash size={16} />
+                      </button>
+                    </div>
                   </td>
                 </tr>
                 );
@@ -152,17 +190,16 @@ export default function ClientsPage() {
         )}
       </GlassCard>
 
-      {/* Add Client Modal */}
       {showModal && (
         <div style={{ position: 'fixed', inset: 0, padding: '16px', background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
           <GlassCard style={{ width: '100%', maxWidth: '480px', maxHeight: '90vh', overflowY: 'auto' }}>
-            <h3 style={{ fontWeight: 700, fontSize: '1.25rem', marginBottom: '24px' }}>Add New Client</h3>
+            <h3 style={{ fontWeight: 700, fontSize: '1.25rem', marginBottom: '24px' }}>{editingClient ? 'Edit Client' : 'Add New Client'}</h3>
             {formError && (
               <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#ef4444', padding: '10px', borderRadius: '8px', marginBottom: '16px', fontSize: '0.9rem' }}>
                 {formError}
               </div>
             )}
-            <form onSubmit={handleAddClient} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <form onSubmit={handleSaveClient} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div>
                   <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>First Name</label>
@@ -190,8 +227,15 @@ export default function ClientsPage() {
               </div>
               <div>
                 <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>Telegram Username</label>
-                <input type="text" required value={form.telegram_username || ''} onChange={(e) => setForm({ ...form, telegram_username: e.target.value })}
+                <input type="text" required={!editingClient} value={form.telegram_username || ''} onChange={(e) => setForm({ ...form, telegram_username: e.target.value })}
                   style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', borderRadius: '10px', padding: '10px 14px', color: 'white', outline: 'none' }} placeholder="@username" />
+              </div>
+              <div>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px', fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>
+                  <FileText size={14} /> Notes
+                </label>
+                <textarea rows={3} value={form.notes || ''} onChange={(e) => setForm({ ...form, notes: e.target.value })}
+                  style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', borderRadius: '10px', padding: '10px 14px', color: 'white', outline: 'none', resize: 'vertical' }} placeholder="Add client notes here..." />
               </div>
 
               <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
@@ -199,7 +243,7 @@ export default function ClientsPage() {
                   Cancel
                 </button>
                 <button type="submit" className="btn btn-primary" style={{ flex: 1 }} disabled={submitting}>
-                  {submitting ? 'Adding...' : 'Add Client'}
+                  {submitting ? 'Saving...' : (editingClient ? 'Save Changes' : 'Add Client')}
                 </button>
               </div>
             </form>

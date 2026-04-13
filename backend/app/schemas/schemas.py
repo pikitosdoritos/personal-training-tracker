@@ -15,6 +15,7 @@ class UserBase(BaseModel):
     photo_url: Optional[str] = None
     role: UserRole = UserRole.CLIENT
     contact_info: Optional[str] = None
+    notes: Optional[str] = None
 
 class UserCreate(UserBase):
     password: str
@@ -29,6 +30,7 @@ class UserUpdate(BaseModel):
     phone_number: Optional[str] = None
     telegram_username: Optional[str] = None
     photo_url: Optional[str] = None
+    notes: Optional[str] = None
 
 class UserOut(UserBase):
     id: int

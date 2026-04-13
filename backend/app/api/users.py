@@ -33,10 +33,44 @@ def update_me(
             raise HTTPException(status_code=400, detail="Email already in use")
         current_user.email = user_update.email
         
-    for field in ["full_name", "first_name", "last_name", "age", "phone_number", "telegram_username", "photo_url", "contact_info"]:
+    for field in ["full_name", "first_name", "last_name", "age", "phone_number", "telegram_username", "photo_url", "contact_info", "notes"]:
         if getattr(user_update, field) is not None:
             setattr(current_user, field, getattr(user_update, field))
             
     db.commit()
     db.refresh(current_user)
     return current_user
+
+@router.put("/{user_id}", response_model=UserOut)
+def update_user(
+    user_id: int,
+    user_update: UserUpdate,
+    db: Session = Depends(get_db),
+    coach: User = Depends(get_current_coach)
+):
+    target_user = db.query(User).filter(User.id == user_id, User.role == UserRole.CLIENT).first()
+    if not target_user:
+        raise HTTPException(status_code=404, detail="Client not found")
+        
+    for field in ["full_name", "first_name", "last_name", "age", "phone_number", "telegram_username", "photo_url", "contact_info", "notes"]:
+        val = getattr(user_update, field)
+        if val is not None:
+            setattr(target_user, field, val)
+            
+    db.commit()
+    db.refresh(target_user)
+    return target_user
+
+@router.delete("/{user_id}")
+def delete_user(
+    user_id: int,
+    db: Session = Depends(get_db),
+    coach: User = Depends(get_current_coach)
+):
+    target_user = db.query(User).filter(User.id == user_id, User.role == UserRole.CLIENT).first()
+    if not target_user:
+        raise HTTPException(status_code=404, detail="Client not found")
+        
+    db.delete(target_user)
+    db.commit()
+    return {"message": "Client deleted successfully"}

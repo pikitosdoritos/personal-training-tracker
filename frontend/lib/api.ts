@@ -73,4 +73,6 @@ export const userApi = {
   me: () => api.get('/api/users/me'),
   updateMe: (data: { full_name?: string; email?: string; contact_info?: string }) =>
     api.put('/api/users/me', data),
+  updateClient: (id: number, data: any) => api.put(`/api/users/${id}`, data),
+  deleteClient: (id: number) => api.delete(`/api/users/${id}`),
 };

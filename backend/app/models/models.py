@@ -25,6 +25,7 @@ class User(Base):
     photo_url = Column(String)
     role = Column(String, default=UserRole.CLIENT)
     contact_info = Column(String)
+    notes = Column(String)
     
     sessions = relationship("TrainingSession", back_populates="coach")
     bookings = relationship("Booking", back_populates="client")
