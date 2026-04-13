@@ -53,7 +53,16 @@ export default function ClientsPage() {
       setForm({ first_name: '', last_name: '', password: '', age: '', phone_number: '', telegram_username: '' });
       fetchClients();
     } catch (err: any) {
-      setFormError(err.response?.data?.detail || 'Failed to add client');
+      const detail = err.response?.data?.detail;
+      if (Array.isArray(detail)) {
+        setFormError(detail.map((d: any) => `${d.loc?.[d.loc.length - 1]}: ${d.msg}`).join(', '));
+      } else if (typeof detail === 'string') {
+        setFormError(detail);
+      } else if (detail) {
+        setFormError(JSON.stringify(detail));
+      } else {
+        setFormError('Failed to add client');
+      }
     } finally {
       setSubmitting(false);
     }
