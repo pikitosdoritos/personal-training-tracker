@@ -5,12 +5,57 @@ import { useState } from "react";
 import { Sidebar } from "@/components/Sidebar";
 import { usePathname } from "next/navigation";
 import { Menu, Dumbbell } from "lucide-react";
+import { ModalProvider, useModal } from "@/lib/modalContext";
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isLoginPage = pathname === "/login";
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { isModalOpen } = useModal();
 
+  return (
+    <>
+      {isLoginPage ? (
+        <>{children}</>
+      ) : (
+        <div className="app-container">
+          <header className="mobile-topbar" style={{
+            position: 'fixed', top: 0, left: 0, right: 0, height: '60px',
+            background: 'rgba(10,10,12,0.95)', backdropFilter: 'blur(12px)',
+            borderBottom: '1px solid var(--card-border)',
+            alignItems: 'center', justifyContent: 'space-between',
+            padding: '0 16px', zIndex: 98
+          }}>
+            <button
+              onClick={() => setSidebarOpen(true)}
+              style={{ background: 'transparent', border: 'none', color: 'white', cursor: 'pointer', padding: '8px', display: 'flex' }}
+              aria-label="Open menu"
+            >
+              <Menu size={22} />
+            </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={{ width: '28px', height: '28px', borderRadius: '8px', overflow: 'hidden' }}>
+                <img src="/logo.png" alt="TrackFit Logo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              </div>
+              <span style={{ fontWeight: 700, fontSize: '1rem' }}>TrackFit</span>
+            </div>
+            <div style={{ width: '38px' }} />
+          </header>
+
+          <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+
+          <main className="main-content">
+            <div className={isModalOpen ? 'blurred' : ''}>
+              {children}
+            </div>
+          </main>
+        </div>
+      )}
+    </>
+  );
+}
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <head>
@@ -33,41 +78,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         }} />
       </head>
       <body>
-        {isLoginPage ? (
-          <>{children}</>
-        ) : (
-          <div className="app-container">
-            {/* Mobile top bar */}
-            <header className="mobile-topbar" style={{
-              position: 'fixed', top: 0, left: 0, right: 0, height: '60px',
-              background: 'rgba(10,10,12,0.95)', backdropFilter: 'blur(12px)',
-              borderBottom: '1px solid var(--card-border)',
-              alignItems: 'center', justifyContent: 'space-between',
-              padding: '0 16px', zIndex: 98
-            }}>
-              <button
-                onClick={() => setSidebarOpen(true)}
-                style={{ background: 'transparent', border: 'none', color: 'white', cursor: 'pointer', padding: '8px', display: 'flex' }}
-                aria-label="Open menu"
-              >
-                <Menu size={22} />
-              </button>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <div style={{ width: '28px', height: '28px', borderRadius: '8px', overflow: 'hidden' }}>
-                  <img src="/logo.png" alt="TrackFit Logo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                </div>
-                <span style={{ fontWeight: 700, fontSize: '1rem' }}>TrackFit</span>
-              </div>
-              <div style={{ width: '38px' }} />
-            </header>
-
-            <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-
-            <main className="main-content">
-              {children}
-            </main>
-          </div>
-        )}
+        <ModalProvider>
+          <AppShell>{children}</AppShell>
+        </ModalProvider>
       </body>
     </html>
   );

@@ -4,6 +4,8 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { trainingApi, userApi } from '@/lib/api';
 import { GlassCard } from '@/components/GlassCard';
 import { ChevronLeft, ChevronRight, Plus, Clock, X } from 'lucide-react';
+import { useModal } from '@/lib/modalContext';
+import { Portal } from '@/components/Portal';
 
 const HOURS = ['08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00','19:00','20:00'];
 
@@ -33,6 +35,10 @@ export default function CalendarPage() {
   const [formError, setFormError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [workingHours, setWorkingHours] = useState<{days: string[], start: string, end: string} | null>(null);
+  const { setModalOpen } = useModal();
+
+  const openModal = () => { setShowModal(true); setModalOpen(true); };
+  const closeModal = () => { setShowModal(false); setModalOpen(false); };
 
   const weekDates = getWeekDates(weekBase);
 
@@ -103,7 +109,7 @@ export default function CalendarPage() {
       else delete payload.training_type_id;
 
       await trainingApi.create(payload);
-      setShowModal(false);
+      closeModal();
       setForm({ title: '', date: '', start_time: '', end_time: '', capacity: 1, client_id: '', status: 'planned', training_type_id: '' });
       fetchData();
     } catch (err: any) {
@@ -143,7 +149,7 @@ export default function CalendarPage() {
             <div style={{ padding: '8px 16px', fontWeight: 600, fontSize: '0.9rem' }}>{formatWeekRange()}</div>
             <button onClick={nextWeek} style={{ padding: '8px 12px', background: 'transparent', border: 'none', color: 'white', cursor: 'pointer' }}><ChevronRight size={18} /></button>
           </div>
-          <button className="btn btn-primary" onClick={() => setShowModal(true)}>
+          <button className="btn btn-primary" onClick={openModal}>
             <Plus size={20} />
             <span>Schedule</span>
           </button>
@@ -214,8 +220,9 @@ export default function CalendarPage() {
 
       {/* Schedule Modal */}
       {showModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <GlassCard style={{ width: '100%', maxWidth: '480px', maxHeight: '90vh', overflowY: 'auto' }}>
+        <Portal>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <GlassCard className="modal-card" style={{ width: '100%', maxWidth: '480px', maxHeight: '90vh', overflowY: 'auto' }}>
             <h3 style={{ fontWeight: 700, fontSize: '1.25rem', marginBottom: '24px' }}>Schedule Session</h3>
             {formError && (
               <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#ef4444', padding: '10px', borderRadius: '8px', marginBottom: '16px', fontSize: '0.9rem' }}>
@@ -304,7 +311,7 @@ export default function CalendarPage() {
               </div>
 
               <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
-                <button type="button" className="btn btn-secondary" style={{ flex: 1 }} onClick={() => setShowModal(false)}>
+                <button type="button" className="btn btn-secondary" style={{ flex: 1 }} onClick={closeModal}>
                   Cancel
                 </button>
                 <button type="submit" className="btn btn-primary" style={{ flex: 1 }} disabled={submitting}>
@@ -314,6 +321,7 @@ export default function CalendarPage() {
             </form>
           </GlassCard>
         </div>
+        </Portal>
       )}
     </div>
   );

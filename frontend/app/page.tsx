@@ -10,6 +10,8 @@ import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts';
 import { trainingApi } from '@/lib/api';
+import { useModal } from '@/lib/modalContext';
+import { Portal } from '@/components/Portal';
 
 export default function Dashboard() {
   const [stats, setStats] = useState<any>(null);
@@ -19,6 +21,10 @@ export default function Dashboard() {
   const [formError, setFormError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const router = useRouter();
+  const { setModalOpen } = useModal();
+
+  const openModal = () => { setShowModal(true); setModalOpen(true); };
+  const closeModal = () => { setShowModal(false); setModalOpen(false); };
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -43,7 +49,7 @@ export default function Dashboard() {
     setSubmitting(true);
     try {
       await trainingApi.create(form);
-      setShowModal(false);
+      closeModal();
       setForm({ title: '', date: '', start_time: '', end_time: '', capacity: 1 });
       fetchStats();
     } catch (err: any) {
@@ -67,7 +73,7 @@ export default function Dashboard() {
           <h1>Dashboard</h1>
           <p>Welcome back, Coach! Here's your overview.</p>
         </div>
-        <button className="btn btn-primary" onClick={() => setShowModal(true)}>
+        <button className="btn btn-primary" onClick={openModal}>
           <Plus size={18} />
           <span>New Session</span>
         </button>
@@ -123,11 +129,12 @@ export default function Dashboard() {
 
       {/* New Session Modal */}
       {showModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <GlassCard style={{ width: '100%', maxWidth: '480px' }}>
+        <Portal>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <GlassCard className="modal-card" style={{ width: '100%', maxWidth: '480px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
               <h3 style={{ fontWeight: 700, fontSize: '1.25rem' }}>New Training Session</h3>
-              <button onClick={() => setShowModal(false)} style={{ background: 'transparent', border: 'none', color: 'white', cursor: 'pointer' }}><X size={20} /></button>
+              <button onClick={closeModal} style={{ background: 'transparent', border: 'none', color: 'white', cursor: 'pointer' }}><X size={20} /></button>
             </div>
             {formError && (
               <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#ef4444', padding: '10px', borderRadius: '8px', marginBottom: '16px', fontSize: '0.9rem' }}>
@@ -167,6 +174,7 @@ export default function Dashboard() {
             </form>
           </GlassCard>
         </div>
+        </Portal>
       )}
     </div>
   );

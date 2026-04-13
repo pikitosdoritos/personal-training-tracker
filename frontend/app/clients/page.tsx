@@ -4,6 +4,8 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { userApi, authApi } from '@/lib/api';
 import { GlassCard } from '@/components/GlassCard';
 import { Search, UserPlus, Mail, Phone, Edit, Trash, FileText, X } from 'lucide-react';
+import { useModal } from '@/lib/modalContext';
+import { Portal } from '@/components/Portal';
 
 export default function ClientsPage() {
   const [clients, setClients] = useState<any[]>([]);
@@ -13,6 +15,12 @@ export default function ClientsPage() {
   const [showModal, setShowModal] = useState(false);
   const [editingClient, setEditingClient] = useState<any>(null);
   const [clientToDelete, setClientToDelete] = useState<any>(null);
+  const { setModalOpen } = useModal();
+
+  const openModal = (client?: any) => { setEditingClient(client || null); setShowModal(true); setModalOpen(true); };
+  const closeModal = () => { setShowModal(false); setEditingClient(null); setModalOpen(false); };
+  const openDelete = (client: any) => { setClientToDelete(client); setModalOpen(true); };
+  const closeDelete = () => { setClientToDelete(null); setModalOpen(false); };
   const [form, setForm] = useState<any>({ first_name: '', last_name: '', email: '', password: '', age: '', phone_number: '', telegram_username: '', notes: '' });
   const [formError, setFormError] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -56,8 +64,7 @@ export default function ClientsPage() {
         const dummyPassword = Math.random().toString(36).slice(-8) + 'A1!'; // Securely generated default fallback password
         await authApi.register({ ...form, email: generatedEmail, password: dummyPassword, role: 'client' });
       }
-      setShowModal(false);
-      setEditingClient(null);
+      closeModal();
       setForm({ first_name: '', last_name: '', password: '', age: '', phone_number: '', telegram_username: '', notes: '' });
       fetchClients();
     } catch (err: any) {
@@ -77,7 +84,6 @@ export default function ClientsPage() {
   };
 
   const handleEditClick = (client: any) => {
-    setEditingClient(client);
     setForm({
       first_name: client.first_name || '',
       last_name: client.last_name || '',
@@ -86,14 +92,14 @@ export default function ClientsPage() {
       telegram_username: client.telegram_username || '',
       notes: client.notes || ''
     });
-    setShowModal(true);
+    openModal(client);
   };
 
   const confirmDeleteClient = async () => {
     if (!clientToDelete) return;
     try {
       await userApi.deleteClient(clientToDelete.id);
-      setClientToDelete(null);
+      closeDelete();
       fetchClients();
     } catch (err) {
       alert('Failed to delete client');
@@ -110,9 +116,8 @@ export default function ClientsPage() {
           <p style={{ color: 'rgba(255, 255, 255, 0.5)' }}>Manage your clients and their training progress.</p>
         </div>
         <button className="btn btn-primary" onClick={() => {
-          setEditingClient(null);
           setForm({ first_name: '', last_name: '', password: '', age: '', phone_number: '', telegram_username: '', notes: '' });
-          setShowModal(true);
+          openModal();
         }}>
           <UserPlus size={20} />
           <span>Add Client</span>
@@ -193,8 +198,9 @@ export default function ClientsPage() {
       </GlassCard>
 
       {showModal && (
-        <div style={{ position: 'fixed', inset: 0, padding: '16px', background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <GlassCard style={{ width: '100%', maxWidth: '480px', maxHeight: '90vh', overflowY: 'auto' }}>
+        <Portal>
+        <div style={{ position: 'fixed', inset: 0, padding: '16px', background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <GlassCard className="modal-card" style={{ width: '100%', maxWidth: '480px', maxHeight: '90vh', overflowY: 'auto' }}>
             <h3 style={{ fontWeight: 700, fontSize: '1.25rem', marginBottom: '24px' }}>{editingClient ? 'Edit Client' : 'Add New Client'}</h3>
             {formError && (
               <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#ef4444', padding: '10px', borderRadius: '8px', marginBottom: '16px', fontSize: '0.9rem' }}>
@@ -241,7 +247,7 @@ export default function ClientsPage() {
               </div>
 
               <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
-                <button type="button" className="btn btn-secondary" style={{ flex: 1 }} onClick={() => setShowModal(false)}>
+                <button type="button" className="btn btn-secondary" style={{ flex: 1 }} onClick={closeModal}>
                   Cancel
                 </button>
                 <button type="submit" className="btn btn-primary" style={{ flex: 1 }} disabled={submitting}>
@@ -251,18 +257,20 @@ export default function ClientsPage() {
             </form>
           </GlassCard>
         </div>
+        </Portal>
       )}
 
       {/* Delete Confirmation Modal */}
       {clientToDelete && (
-        <div style={{ position: 'fixed', inset: 0, padding: '16px', background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <GlassCard style={{ width: '100%', maxWidth: '400px' }}>
+        <Portal>
+        <div style={{ position: 'fixed', inset: 0, padding: '16px', background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <GlassCard className="modal-card" style={{ width: '100%', maxWidth: '400px' }}>
             <h3 style={{ fontWeight: 700, fontSize: '1.25rem', marginBottom: '16px', color: '#ef4444' }}>Delete Client</h3>
             <p style={{ color: 'rgba(255,255,255,0.7)', marginBottom: '24px', lineHeight: 1.5 }}>
               Are you sure you want to delete <strong>{clientToDelete.first_name} {clientToDelete.last_name}</strong>? This action cannot be undone and will permanently remove their profile.
             </p>
             <div style={{ display: 'flex', gap: '12px' }}>
-              <button className="btn btn-secondary" style={{ flex: 1 }} onClick={() => setClientToDelete(null)}>
+              <button className="btn btn-secondary" style={{ flex: 1 }} onClick={closeDelete}>
                 Cancel
               </button>
               <button className="btn btn-primary" style={{ flex: 1, background: '#ef4444', borderColor: '#ef4444' }} onClick={confirmDeleteClient}>
@@ -271,6 +279,7 @@ export default function ClientsPage() {
             </div>
           </GlassCard>
         </div>
+        </Portal>
       )}
     </div>
   );
