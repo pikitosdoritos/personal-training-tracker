@@ -46,7 +46,8 @@ export default function ClientsPage() {
     setFormError('');
     setSubmitting(true);
     try {
-      const generatedEmail = `${form.first_name.toLowerCase().replace(/\s/g, '')}.${form.last_name.toLowerCase().replace(/\s/g, '')}@client.trackfit.local`;
+      const randomString = Math.random().toString(36).substring(2, 10);
+      const generatedEmail = `client_${randomString}@trackfit.com`;
       const dummyPassword = Math.random().toString(36).slice(-8) + 'A1!'; // Securely generated default fallback password
       await authApi.register({ ...form, email: generatedEmail, password: dummyPassword, role: 'client' });
       setShowModal(false);
