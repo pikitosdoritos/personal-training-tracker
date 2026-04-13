@@ -193,7 +193,7 @@ export default function ClientsPage() {
       </GlassCard>
 
       {showModal && (
-        <div style={{ position: 'fixed', inset: 0, padding: '16px', background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+        <div style={{ position: 'fixed', inset: 0, padding: '16px', background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
           <GlassCard style={{ width: '100%', maxWidth: '480px', maxHeight: '90vh', overflowY: 'auto' }}>
             <h3 style={{ fontWeight: 700, fontSize: '1.25rem', marginBottom: '24px' }}>{editingClient ? 'Edit Client' : 'Add New Client'}</h3>
             {formError && (
@@ -255,7 +255,7 @@ export default function ClientsPage() {
 
       {/* Delete Confirmation Modal */}
       {clientToDelete && (
-        <div style={{ position: 'fixed', inset: 0, padding: '16px', background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+        <div style={{ position: 'fixed', inset: 0, padding: '16px', background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
           <GlassCard style={{ width: '100%', maxWidth: '400px' }}>
             <h3 style={{ fontWeight: 700, fontSize: '1.25rem', marginBottom: '16px', color: '#ef4444' }}>Delete Client</h3>
             <p style={{ color: 'rgba(255,255,255,0.7)', marginBottom: '24px', lineHeight: 1.5 }}>
