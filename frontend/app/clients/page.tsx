@@ -12,6 +12,7 @@ export default function ClientsPage() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingClient, setEditingClient] = useState<any>(null);
+  const [clientToDelete, setClientToDelete] = useState<any>(null);
   const [form, setForm] = useState<any>({ first_name: '', last_name: '', email: '', password: '', age: '', phone_number: '', telegram_username: '', notes: '' });
   const [formError, setFormError] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -88,10 +89,11 @@ export default function ClientsPage() {
     setShowModal(true);
   };
 
-  const handleDeleteClient = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this client?')) return;
+  const confirmDeleteClient = async () => {
+    if (!clientToDelete) return;
     try {
-      await userApi.deleteClient(id);
+      await userApi.deleteClient(clientToDelete.id);
+      setClientToDelete(null);
       fetchClients();
     } catch (err) {
       alert('Failed to delete client');
@@ -177,7 +179,7 @@ export default function ClientsPage() {
                       <button onClick={() => handleEditClick(client)} style={{ background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.2)', color: '#3b82f6', cursor: 'pointer', padding: '6px', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="Edit Client">
                         <Edit size={16} />
                       </button>
-                      <button onClick={() => handleDeleteClient(client.id)} style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#ef4444', cursor: 'pointer', padding: '6px', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="Delete Client">
+                      <button onClick={() => setClientToDelete(client)} style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#ef4444', cursor: 'pointer', padding: '6px', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="Delete Client">
                         <Trash size={16} />
                       </button>
                     </div>
@@ -247,6 +249,26 @@ export default function ClientsPage() {
                 </button>
               </div>
             </form>
+          </GlassCard>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {clientToDelete && (
+        <div style={{ position: 'fixed', inset: 0, padding: '16px', background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <GlassCard style={{ width: '100%', maxWidth: '400px' }}>
+            <h3 style={{ fontWeight: 700, fontSize: '1.25rem', marginBottom: '16px', color: '#ef4444' }}>Delete Client</h3>
+            <p style={{ color: 'rgba(255,255,255,0.7)', marginBottom: '24px', lineHeight: 1.5 }}>
+              Are you sure you want to delete <strong>{clientToDelete.first_name} {clientToDelete.last_name}</strong>? This action cannot be undone and will permanently remove their profile.
+            </p>
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <button className="btn btn-secondary" style={{ flex: 1 }} onClick={() => setClientToDelete(null)}>
+                Cancel
+              </button>
+              <button className="btn btn-primary" style={{ flex: 1, background: '#ef4444', borderColor: '#ef4444' }} onClick={confirmDeleteClient}>
+                Yes, Delete
+              </button>
+            </div>
           </GlassCard>
         </div>
       )}
